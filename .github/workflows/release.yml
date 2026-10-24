@@ -1,0 +1,45 @@
+name: Release
+
+# Publish a GitHub Release whose tag is vX.Y.Z (same as "version" in
+# extension/manifest.json). This job builds the ready-to-install zip
+# (manifest.json at the root) and attaches it to that release.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Check that the tag matches manifest.json
+        run: |
+          MANIFEST="$(jq -r .version extension/manifest.json)"
+          if [ "${TAG#v}" != "$MANIFEST" ]; then
+            echo "::error::Tag $TAG does not match manifest version $MANIFEST"; exit 1
+          fi
+
+      - name: Build zip
+        run: cd extension && zip -r "../plateia-$TAG.zip" . -x '.*'
+
+      - name: Attach zip and install notes
+        env:
+          NOTES: |
+            ### Install
+            1. Download **plateia-${{ github.event.release.tag_name }}.zip** below.
+            2. Open `chrome://extensions` and turn on **Developer mode**.
+            3. Drag the zip onto the page (or unzip it and use **Load unpacked**).
+        run: |
+          gh release upload "$TAG" "plateia-$TAG.zip" --clobber
+          gh release view "$TAG" --json body -q .body > old.md
+          { printf '%s\n\n' "$NOTES"; cat old.md; } > notes.md
+          gh release edit "$TAG" --notes-file notes.md
