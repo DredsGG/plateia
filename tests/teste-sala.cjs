@@ -79,6 +79,8 @@ function chromeFalso(store, ouvintes) {
   w.WebSocket = class { constructor() { setTimeout(() => this.onopen && this.onopen(), 1); } send() {} close() {} };
   w.HTMLIFrameElement.prototype.__ok = 1;
   w.eval(ler('src/comum.js'));
+  w.eval(ler('src/ui.js'));
+  w.eval(ler('src/pokeidle-painel.js'));
   w.eval(ler('src/sala.js'));
   await espera(300);
   const sr = () => w.document.getElementById('plateia-sala').shadowRoot;

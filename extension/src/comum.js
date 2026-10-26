@@ -37,6 +37,19 @@
     } catch (e) { /* contexto invalidado (extensão recarregada) */ }
   };
   P.config = async () => Object.assign({}, P.CONFIG_PADRAO, await P.ler('config', {}));
+
+  // ---------- Kick ----------
+  P.CONFIG_KICK_PADRAO = {
+    canais: [],            // [{slug, mostrar, modo: 'fixo'|'fila'|'fora', origem?: 'pokeidle'}]
+    vagas: 2,              // lives tocando de verdade (medido: a Kick só paga pontos em 2 por vez)
+    seguirPokeidle: true,  // põe na lista os canais oficiais do PokeIdle na Kick (lidos do jogo)
+    pkIgnorar: [],
+    resgateAuto: true,     // compra o pacote do PokeIdle (XP + Capture + Lure) quando o saldo do canal cobre os três
+    diariaAuto: true,      // pega a Daily Reward da Kick quando completa 1 h assistida no dia
+    dropsAuto: true        // resgata Drops da Kick que chegaram a 100%
+  };
+  P.configKick = async () => Object.assign({}, P.CONFIG_KICK_PADRAO, await P.ler('configKick', {}));
+  P.ehKick = () => /(^|\.)kick\.com$/.test(location.hostname);
   P.aoMudar = (fn) => {
     try { if (temChrome) chrome.storage.onChanged.addListener((m, area) => area === 'local' && fn(m)); } catch (e) {}
   };

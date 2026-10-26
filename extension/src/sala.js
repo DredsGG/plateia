@@ -49,6 +49,7 @@
     document.documentElement.appendChild(host);
   }
   function icone() {
+    if (P.ui && P.ui.logo) { const l = P.ui.logo(20); l.setAttribute('class', 'ic'); return l; }
     const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ic');
     s.innerHTML = '<g fill="currentColor"><circle cx="6" cy="9" r="2.6"/><circle cx="18" cy="9" r="2.6"/><circle cx="12" cy="7.5" r="3"/>' +
@@ -103,7 +104,7 @@
     const host = h('div', { id: 'plateia-sala' });
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483000';
     const raiz = host.attachShadow({ mode: 'open' });
-    raiz.appendChild(h('style', {}, CSS));
+    raiz.appendChild(h('style', {}, CSS + (P.CSS_PAINEL || '')));
     const els = {};
     const app = h('div', { class: 'app' },
       h('header', {},
@@ -114,6 +115,9 @@
           h('button', { class: 'bt sec', onclick: fecharSala }, 'Fechar sala'))),
       h('div', { class: 'corpo' },
         h('aside', {},
+          els.abas = h('div', { class: 'abas' }),
+          els.abaPk = h('div', { class: 'aba-pk', style: 'display:none' }),
+          els.abaCanais = h('div', { class: 'aba-canais' },
           h('form', { class: 'add', onsubmit: (e) => { e.preventDefault(); adicionar(els.input.value); els.input.value = ''; } },
             els.input = h('input', { placeholder: 'canal ou link (ex.: gaules)', autocomplete: 'off', spellcheck: 'false' }),
             h('button', { class: 'bt' }, 'Adicionar')),
@@ -129,7 +133,7 @@
             els.ajustes = h('div', {})),
           h('p', { class: 'nota' },
             'A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. ',
-            'Os outros canais ficam com você presente no chat.'),
+            'Os outros canais ficam com você presente no chat.')),
           h('div', { class: 'assina' }, 'feito por ',
             h('a', { href: 'https://github.com/DredsGG', target: '_blank', rel: 'noopener noreferrer', title: 'github.com/DredsGG' }, 'Dreds'),
             P.versao() ? ' · v' + P.versao() : null)),
@@ -383,7 +387,8 @@
 
     // ----- presença no chat (IRC do próprio site) -----
     let irc = null, ircPronto = false, ircTent = 0, ircTimer = null, ircErro = '';
-    const noChat = new Set(), pedidos = new Set();
+    const noChat = new Set(), pedidos = new Map(); // pedidos: canal -> hora do JOIN (sem resposta em 30 s, pede de novo)
+    let ultimaMsgIrc = 0;
     function conectarIRC() {
       if (!cfg.presencaChat || irc) return;
       const tok = P.token(), eu = P.meuLogin();
@@ -391,6 +396,7 @@
       irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
       irc.onopen = () => { irc.send('CAP REQ :twitch.tv/membership'); irc.send('PASS oauth:' + tok); irc.send('NICK ' + eu); };
       irc.onmessage = (e) => {
+        ultimaMsgIrc = Date.now();
         for (const linha of String(e.data).split('\r\n')) {
           if (!linha) continue;
           if (linha.startsWith('PING')) { irc.send('PONG' + linha.slice(4)); continue; }
@@ -418,14 +424,16 @@
       if (!ircPronto) return;
       const quero = new Set(cfg.canais.map((c) => c.login).filter(P.loginValido));
       for (const c of noChat) if (!quero.has(c)) irc.send('PART #' + c);
+      for (const [c, em] of pedidos) if (Date.now() - em > 30000) pedidos.delete(c); // a Twitch descartou o JOIN: tenta de novo
       filaJoin = [...quero].filter((c) => !noChat.has(c) && !pedidos.has(c));
       if (!joinTimer) entrarEmLotes();
     }
+    P.salaTwitchChat = () => sincronizarChat(); // usado pelos testes
     function entrarEmLotes() {
       // limite da Twitch: 20 entradas a cada 10 s
       if (!irc || !ircPronto || !filaJoin.length) { joinTimer = null; return; }
       const lote = filaJoin.splice(0, 15);
-      lote.forEach((c) => pedidos.add(c));
+      lote.forEach((c) => pedidos.set(c, Date.now()));
       irc.send('JOIN ' + lote.map((c) => '#' + c).join(','));
       joinTimer = setTimeout(entrarEmLotes, 11000);
     }
@@ -523,7 +531,18 @@
         h('button', { class: 'mini' + (conf ? ' perigo' : ''), title: 'Tira todos os canais da lista e desliga o "Seguir canais do PokeIdle"', onclick: () => limparTudo(false) }, conf ? 'Clique de novo para limpar' : 'Limpar lista'),
         h('button', { class: 'mini', title: pk ? 'Tira tudo e deixa só os canais oficiais com bônus do PokeIdle' : 'A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5)', disabled: !pk, onclick: () => limparTudo(true) }, 'Só canais do PokeIdle'));
     }
+    let aba = 'canais';
+    function renderAbas() {
+      if (!els.abas) return;
+      repor(els.abas,
+        h('button', { class: 'aba' + (aba === 'canais' ? ' on' : ''), onclick: () => { aba = 'canais'; renderAbas(); } }, 'Canais'),
+        h('button', { class: 'aba' + (aba === 'pokeidle' ? ' on' : ''), onclick: () => { aba = 'pokeidle'; renderAbas(); } }, 'PokeIdle'));
+      els.abaCanais.style.display = aba === 'canais' ? '' : 'none';
+      els.abaPk.style.display = aba === 'pokeidle' ? '' : 'none';
+      if (aba === 'pokeidle' && P.painelPokeidle) repor(els.abaPk, P.painelPokeidle({ pk, pkk, plataforma: 'twitch' }));
+    }
     function renderPokeidle() {
+      if (aba === 'pokeidle') renderAbas();
       if (!els.pk) return;
       if (els.btPk) {
         els.btPk.disabled = !pk;
@@ -566,7 +585,7 @@
         linha('Lives da sala em 160p', chk('qualidadeBaixa'), 'Lives da sala na menor qualidade: menos internet e PC. Sua Twitch normal não muda.'));
     }
     function renderLeve() { renderChips(); renderLista(); }
-    function render() { renderChips(); renderBarra(); renderLista(); renderDrops(); renderAjustes(); }
+    function render() { renderAbas(); renderChips(); renderBarra(); renderLista(); renderDrops(); renderAjustes(); }
 
     P.aoMudar((m) => {
       if (m.baus) { baus = m.baus.newValue || {}; renderLeve(); }
@@ -581,7 +600,7 @@
       iframes.clear();
       if (irc) irc.close();
       restaurarQualidade();
-      clearInterval(t1); clearInterval(t2); clearInterval(t3); clearInterval(t4);
+      clearInterval(t1); clearInterval(t2); clearInterval(t3); clearInterval(t4); clearInterval(t5);
       host.remove();
       delete document.documentElement.dataset.plateia;
       if (document.body) document.body.style.overflow = '';
@@ -606,12 +625,17 @@
       if (els.relogio && els.relogio.isConnected) els.relogio.textContent = 'troca em ' + mmss(rodada.inicio + cfg.rodizioMin * 60000 - Date.now());
     }, 1000);
     const t3 = setInterval(verDrops, 120000);
+    // vigia do chat: a cada minuto confere se está em todos os canais; conexão muda há 6 min = reconecta
+    const t5 = setInterval(() => {
+      if (irc && ircPronto && ultimaMsgIrc && Date.now() - ultimaMsgIrc > 6 * 60000) { try { irc.close(); } catch (e) {} return; }
+      sincronizarChat();
+    }, 60000);
   }
 
   const CSS = `
   :host{all:initial}
   *{box-sizing:border-box}
-  .app{position:fixed;inset:0;display:flex;flex-direction:column;background:#0e0e10;color:#efeff1;font:13px/1.4 Inter,Roobert,"Helvetica Neue",Arial,sans-serif}
+  .app{--cor:#9147ff;position:fixed;inset:0;display:flex;flex-direction:column;background:#0e0e10;color:#efeff1;font:13px/1.4 Inter,Roobert,"Helvetica Neue",Arial,sans-serif}
   header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:#18181b;border-bottom:1px solid #2f2f35}
   .marca{display:flex;align-items:center;gap:8px;color:#bf94ff;white-space:nowrap}
   .marca b{font-size:16px;color:#fff}
