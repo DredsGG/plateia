@@ -43,9 +43,10 @@
         background:#9147ff;color:#fff;border:0;border-radius:999px;padding:8px 14px 8px 10px;font:600 13px/1 Inter,Roobert,Arial,sans-serif;
         box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;opacity:.92}
       button:hover{opacity:1;background:#a970ff}
-      .ic{width:18px;height:18px}`));
-    raiz.appendChild(h('button', { title: 'Abrir a sala de multi-live da Plateia', onclick: abrirSala },
-      icone(), 'Plateia'));
+      .ic{width:18px;height:18px}` + ((P.ui && P.ui.CSS_BOLINHA) || '')));
+    const bt = h('button', { title: 'Abrir a sala de multi-live da Plateia', onclick: abrirSala }, icone(), 'Plateia');
+    raiz.appendChild(bt);
+    if (P.ui && P.ui.marcarNovidade) P.ui.marcarNovidade(bt);
     document.documentElement.appendChild(host);
   }
   function icone() {
@@ -104,7 +105,7 @@
     const host = h('div', { id: 'plateia-sala' });
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483000';
     const raiz = host.attachShadow({ mode: 'open' });
-    raiz.appendChild(h('style', {}, CSS + (P.CSS_PAINEL || '')));
+    raiz.appendChild(h('style', {}, CSS + (P.CSS_PAINEL || '') + ((P.ui && P.ui.CSS_ATUALIZACAO) || '') + '.upd + .assina{margin-top:4px}'));
     const els = {};
     const app = h('div', { class: 'app' },
       h('header', {},
@@ -134,6 +135,7 @@
           h('p', { class: 'nota' },
             'A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. ',
             'Os outros canais ficam com você presente no chat.')),
+          P.ui && P.ui.atualizacao ? P.ui.atualizacao() : null,
           h('div', { class: 'assina' }, 'feito por ',
             h('a', { href: 'https://github.com/DredsGG', target: '_blank', rel: 'noopener noreferrer', title: 'github.com/DredsGG' }, 'Dreds'),
             P.versao() ? ' · v' + P.versao() : null)),

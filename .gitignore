@@ -3,3 +3,4 @@ package-lock.json
 *.zip
 .DS_Store
 Thumbs.db
+upd-*.png

@@ -10,8 +10,8 @@ A Chrome extension for **Twitch and Kick**. It grabs the Twitch channel-points c
 ![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.3.1-9146FF)
-![Tests](https://img.shields.io/badge/tests-52%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.4.1-9146FF)
+![Tests](https://img.shields.io/badge/tests-61%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 <img src="docs/plateia-sala.png" width="900" alt="Plateia room: channel list with modes and tags on the left, the two lives that are earning points on the right">
@@ -74,7 +74,9 @@ Before writing the room I measured how Twitch actually behaves, on a live accoun
 
 ```
 extension/
-├── manifest.json            MV3, only the "storage" permission
+├── manifest.json            MV3: storage + alarms; hosts twitch.tv, kick.com and api.github.com
+├── COMO-INSTALAR.html       install / use / update guide (PT and EN), opens on first install
+├── src/fundo.js             service worker: update check against this repo's releases + reload when the folder changes
 ├── src/comum.js             shared: default settings, storage, cookie login, GQL helper
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
@@ -86,17 +88,21 @@ extension/
 └── icons/
 ```
 
-- No service worker and no popup: everything lives inside the site.
+- No popup: everything lives inside the site. The only background piece is the small update service worker.
 - Channel data comes from Twitch's own GraphQL endpoint with aliased queries, batched 10 per request (Twitch rejects more than 15 aliases).
 - The room's players are forced to 160p only while they load, then your usual quality setting is restored.
 - Chat presence heals itself: a JOIN that Twitch drops is retried after 30 s, every channel is re-checked each minute, and a silent chat connection is reopened after 6 minutes.
 - Kick calls use the site's own login (the `session_token` cookie) from inside kick.com.
 
+## Updates
+
+Plateia checks this repo's latest release when Chrome starts, every 6 hours and when you press **↻ Check for updates** in either room. A new version shows a gold card with what changed and a gold dot on the Plateia button; **Update** downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running).
+
 ## Install
 
-1. Download **plateia-vX.Y.Z.zip** from the [latest release](https://github.com/DredsGG/plateia/releases/latest).
-2. Open `chrome://extensions` and turn on **Developer mode**.
-3. Drag the zip onto the page (or unzip it and use **Load unpacked**). From a clone of this repo, load the `extension/` folder.
+1. Download **plateia-vX.Y.Z.zip** from the [latest release](https://github.com/DredsGG/plateia/releases/latest) and extract it to a folder you'll keep (updates are extracted over it).
+2. Open `chrome://extensions` and turn on **Developer mode** (keep it on: the self-reload after an update needs it).
+3. Click **Load unpacked** and pick that folder. From a clone of this repo, load the `extension/` folder. `COMO-INSTALAR.html` opens with the illustrated steps.
 4. Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purple on Twitch, green on Kick).
 5. For PokeIdle, reload the game tab once after installing so Plateia can read the official channels.
 
@@ -105,10 +111,15 @@ extension/
 ```bash
 cd tests && npm i jsdom
 node teste-sala.cjs         # Twitch room logic in jsdom: 27/27
-node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab: 16/16
+node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab
 node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
+
+# needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
+node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10
 ```
+
+`e2e-atualizacao.mjs` loads the real extension in Chromium against a fake GitHub release: the guide opens on install, the gold card shows the versions and notes, *Update* opens the zip, the dot appears on the button, *Later* hides it, and writing a newer `manifest.json` into the folder makes Plateia reload itself (15 s) with the green "updated" notice.
 
 `teste-sala.cjs` covers the PokeIdle bridge and storage, GQL batching, settings migration, per-channel modes, *watch now*, removed channels not coming back, list clearing, and the footer. The room was also run end to end in Chromium with the extension loaded against a simulated Twitch and PokeIdle, and on a real account in my Chrome (chat 12/12, a chest claimed by the rotation). Claiming a real Drop at 100% hasn't been seen live yet. The Kick room was run on a real account (live status, balances, Daily Reward and Drops read, 2 lives playing); a real bundle redemption hasn't happened yet.
 

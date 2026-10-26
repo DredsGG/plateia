@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plateia · como instalar e atualizar</title>
+<link rel="icon" href="icons/48.png">
+<style>
+  :root{--fundo:#f6f6f8;--cartao:#fff;--texto:#18181b;--suave:#5c5c66;--borda:#e3e3e8;--roxo:#7c3aed;--verde:#2b9a0a;--codigo:#f0f0f4}
+  @media (prefers-color-scheme: dark){:root{--fundo:#0e0e10;--cartao:#18181b;--texto:#efeff1;--suave:#a8a8b3;--borda:#2f2f35;--roxo:#a970ff;--verde:#53fc18;--codigo:#26262c}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:var(--texto);font:16px/1.55 Inter,"Segoe UI",Arial,sans-serif}
+  .topo{display:flex;align-items:center;gap:14px;max-width:820px;margin:0 auto;padding:28px 20px 8px}
+  .topo img{width:56px;height:56px}
+  .topo h1{margin:0;font-size:26px}
+  .topo p{margin:2px 0 0;color:var(--suave)}
+  .idiomas{margin-left:auto;display:flex;gap:6px}
+  .idiomas button{display:flex;border:2px solid var(--borda);background:var(--cartao);border-radius:8px;padding:4px;cursor:pointer;opacity:.55;transition:opacity .15s}
+  .idiomas button:hover{opacity:.85}
+  .idiomas button.on{border-color:var(--roxo);opacity:1}
+  .idiomas svg{display:block;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+  main a{color:var(--roxo);font-weight:600}
+  main{max-width:820px;margin:0 auto;padding:8px 20px 40px;display:flex;flex-direction:column;gap:16px}
+  section{background:var(--cartao);border:1px solid var(--borda);border-radius:14px;padding:18px 20px}
+  h2{margin:0 0 8px;font-size:19px}
+  ol,ul{margin:6px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--codigo);border-radius:5px;padding:1px 6px;font-size:14px}
+  .tw{color:var(--roxo);font-weight:700}.kk{color:var(--verde);font-weight:700}
+  .aviso{border-left:4px solid #c9a227;padding:6px 12px;background:rgba(201,162,39,.1);border-radius:6px}
+  footer{max-width:820px;margin:0 auto;padding:0 20px 30px;color:var(--suave);font-size:13px}
+  footer a{color:var(--roxo);font-weight:700;text-decoration:none}
+  [data-lang]{display:none}
+  body.pt [data-lang=pt],body.en [data-lang=en]{display:revert}
+</style>
+</head>
+<body class="pt">
+<div class="topo">
+  <img src="icons/128.png" alt="">
+  <div>
+    <h1>Plateia</h1>
+    <p data-lang="pt">Twitch e Kick: baú, pontos, Drops, salas de multi-live e bônus do PokeIdle.</p>
+    <p data-lang="en">Twitch and Kick: chest, points, Drops, multi-live rooms and the PokeIdle bonus.</p>
+  </div>
+  <div class="idiomas">
+    <button data-escolher="pt" title="Português" aria-label="Português" class="on"><svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#009c3b"/><path d="M14 2.6 25.2 10 14 17.4 2.8 10z" fill="#ffdf00"/><circle cx="14" cy="10" r="4.6" fill="#002776"/><path d="M9.6 8.9c3-.7 6.2-.3 8.8 1.3" stroke="#fff" stroke-width="1" fill="none"/></svg></button>
+    <button data-escolher="en" title="English" aria-label="English"><svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><clipPath id="cu"><rect width="28" height="20" rx="2"/></clipPath><g clip-path="url(#cu)"><rect width="28" height="20" fill="#fff"/><rect y="0.00" width="28" height="1.54" fill="#b22234"/><rect y="3.08" width="28" height="1.54" fill="#b22234"/><rect y="6.15" width="28" height="1.54" fill="#b22234"/><rect y="9.23" width="28" height="1.54" fill="#b22234"/><rect y="12.31" width="28" height="1.54" fill="#b22234"/><rect y="15.38" width="28" height="1.54" fill="#b22234"/><rect y="18.46" width="28" height="1.54" fill="#b22234"/><rect width="12.6" height="10.77" fill="#3c3b6e"/><circle cx="1.6" cy="1.4" r=".45" fill="#fff"/><circle cx="4.0" cy="1.4" r=".45" fill="#fff"/><circle cx="6.4" cy="1.4" r=".45" fill="#fff"/><circle cx="8.8" cy="1.4" r=".45" fill="#fff"/><circle cx="11.2" cy="1.4" r=".45" fill="#fff"/><circle cx="2.8" cy="3.3" r=".45" fill="#fff"/><circle cx="5.2" cy="3.3" r=".45" fill="#fff"/><circle cx="7.6" cy="3.3" r=".45" fill="#fff"/><circle cx="10.0" cy="3.3" r=".45" fill="#fff"/><circle cx="1.6" cy="5.2" r=".45" fill="#fff"/><circle cx="4.0" cy="5.2" r=".45" fill="#fff"/><circle cx="6.4" cy="5.2" r=".45" fill="#fff"/><circle cx="8.8" cy="5.2" r=".45" fill="#fff"/><circle cx="11.2" cy="5.2" r=".45" fill="#fff"/><circle cx="2.8" cy="7.1" r=".45" fill="#fff"/><circle cx="5.2" cy="7.1" r=".45" fill="#fff"/><circle cx="7.6" cy="7.1" r=".45" fill="#fff"/><circle cx="10.0" cy="7.1" r=".45" fill="#fff"/><circle cx="1.6" cy="9.0" r=".45" fill="#fff"/><circle cx="4.0" cy="9.0" r=".45" fill="#fff"/><circle cx="6.4" cy="9.0" r=".45" fill="#fff"/><circle cx="8.8" cy="9.0" r=".45" fill="#fff"/><circle cx="11.2" cy="9.0" r=".45" fill="#fff"/></g></svg></button>
+  </div>
+</div>
+<main>
+  <section id="instalar">
+    <h2 data-lang="pt">1. Instalar</h2><h2 data-lang="en">1. Install</h2>
+    <ol data-lang="pt">
+      <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+      <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
+      <li>Abra <code>chrome://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (canto de cima, à direita).</li>
+      <li>Clique em <b>Carregar sem compactação</b> e escolha essa pasta.</li>
+    </ol>
+    <ol data-lang="en">
+      <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+      <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
+      <li>Open <code>chrome://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
+      <li>Click <b>Load unpacked</b> and pick that folder.</li>
+    </ol>
+  </section>
+  <section id="usar">
+    <h2 data-lang="pt">2. Usar</h2><h2 data-lang="en">2. Use</h2>
+    <ul data-lang="pt">
+      <li><span class="tw">Twitch:</span> o baú de +50 é pego sozinho em qualquer aba. O botão roxo <b>Plateia</b> (canto de baixo, à esquerda) abre a sala: você fica no chat de todos os canais da lista e 2 lives tocam valendo pontos.</li>
+      <li><span class="kk">Kick:</span> o botão verde <b>Plateia</b> abre a sala da Kick: 2 lives valendo pontos, Daily Reward e Drops pegos sozinhos.</li>
+      <li><b>PokeIdle:</b> com o jogo aberto numa aba, recarregue a aba do jogo (F5) uma vez. A Plateia lê os canais oficiais com bônus. Na Kick, ela junta pontos até dar um de cada (XP + Capture Boost + Secret Lure) e resgata os três, só com a Kick vinculada no jogo.</li>
+    </ul>
+    <ul data-lang="en">
+      <li><span class="tw">Twitch:</span> the +50 chest is claimed by itself on any tab. The purple <b>Plateia</b> button (bottom left) opens the room: you're in the chat of every channel on the list and 2 lives play for points.</li>
+      <li><span class="kk">Kick:</span> the green <b>Plateia</b> button opens the Kick room: 2 lives earning points, Daily Reward and Drops claimed by themselves.</li>
+      <li><b>PokeIdle:</b> with the game open in a tab, reload the game tab (F5) once. Plateia reads the official bonus channels. On Kick it saves points until it can buy one of each (XP + Capture Boost + Secret Lure) and redeems all three, only with Kick linked inside the game.</li>
+    </ul>
+  </section>
+  <section id="atualizar">
+    <h2 data-lang="pt">3. Atualizar</h2><h2 data-lang="en">3. Update</h2>
+    <ol data-lang="pt">
+      <li>A Plateia procura versão nova no GitHub sozinha (e no botão <b>Procurar atualização</b>, no rodapé das salas). Quando tem, aparece um aviso dourado com o que mudou e uma bolinha no botão Plateia.</li>
+      <li>Clique em <b>Atualizar</b>: o zip novo é baixado.</li>
+      <li>Extraia o zip <b>por cima da mesma pasta</b> que você carregou, substituindo os arquivos.</li>
+      <li>Pronto: em até 1 minuto a Plateia percebe e se recarrega sozinha, e as salas abertas reabrem na versão nova. Seus ajustes e listas continuam.</li>
+    </ol>
+    <ol data-lang="en">
+      <li>Plateia checks GitHub for new versions by itself (and with the <b>Procurar atualização</b> button in the rooms' footer). When there's one, a golden notice shows what changed and a dot appears on the Plateia button.</li>
+      <li>Click <b>Atualizar</b>: the new zip downloads.</li>
+      <li>Unzip it <b>over the same folder</b> you loaded, replacing the files.</li>
+      <li>Done: within a minute Plateia notices and reloads itself, and open rooms come back on the new version. Your settings and lists stay.</li>
+    </ol>
+    <p class="aviso" data-lang="pt">Não mova nem renomeie a pasta: o Chrome perde a extensão e os ajustes.</p>
+    <p class="aviso" data-lang="en">Don't move or rename the folder: Chrome loses the extension and its settings.</p>
+  </section>
+</main>
+<footer><span data-lang="pt">feito por</span><span data-lang="en">made by</span> <a href="https://github.com/DredsGG" target="_blank" rel="noopener noreferrer">Dreds</a> · <span id="versao"></span></footer>
+<script src="guia/guia.js"></script>
+</body>
+</html>

@@ -63,8 +63,10 @@
       button{position:fixed;left:14px;bottom:14px;z-index:2147483000;display:flex;align-items:center;gap:7px;
         background:#53fc18;color:#0b0b0c;border:0;border-radius:999px;padding:6px 14px 6px 6px;font:700 13px/1 Inter,Arial,sans-serif;
         box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;opacity:.94}
-      button:hover{opacity:1;filter:brightness(1.08)}`));
-    raiz.appendChild(h('button', { title: 'Abrir a sala de multi-live da Plateia (Kick)', onclick: abrirSala }, logo(22), 'Plateia'));
+      button:hover{opacity:1;filter:brightness(1.08)}` + P.ui.CSS_BOLINHA));
+    const bt = h('button', { title: 'Abrir a sala de multi-live da Plateia (Kick)', onclick: abrirSala }, logo(22), 'Plateia');
+    raiz.appendChild(bt);
+    P.ui.marcarNovidade(bt);
     document.documentElement.appendChild(host);
   }
 
@@ -106,7 +108,7 @@
     const host = h('div', { id: 'plateia-sala' });
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483000';
     const raiz = host.attachShadow({ mode: 'open' });
-    raiz.appendChild(h('style', {}, CSS + P.CSS_PAINEL));
+    raiz.appendChild(h('style', {}, CSS + P.CSS_PAINEL + P.ui.CSS_ATUALIZACAO + '.upd + .assina{margin-top:4px}'));
     const els = {};
     raiz.appendChild(h('div', { class: 'app' },
       h('header', {},
@@ -119,6 +121,7 @@
         h('aside', {},
           els.abas = h('div', { class: 'abas' }),
           els.conteudo = h('div', { class: 'conteudo' }),
+          P.ui.atualizacao(),
           assinatura()),
         els.palco = h('main', { class: 'palco' },
           els.vazio = h('div', { class: 'vazio' }, 'Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.')))));
