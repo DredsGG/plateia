@@ -19,11 +19,26 @@
     pkIgnorar: []         // canais do PokeIdle que você tirou da lista na mão
   };
 
-  const temChrome = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
+  // Firefox: `browser` (promessas); Chrome, Edge, Brave e Opera: `chrome`. Nos testes (jsdom) só existe `chrome`.
+  const ext = (typeof browser !== 'undefined' && browser && browser.runtime && browser.runtime.id) ? browser
+    : (typeof chrome !== 'undefined' ? chrome : undefined);
+  P.ext = ext;
+  P.ehFirefox = () => { try { return ext.runtime.getURL('').startsWith('moz-extension:'); } catch (e) { return false; } };
+  const temChrome = !!(ext && ext.storage && ext.storage.local);
+  // Pedido de rede como se fosse a própria página (origem e cookies do site), como o Chrome faz nos content scripts.
+  // No Firefox isso é o `content.fetch`; o `fetch` comum lá sai com a identidade da extensão.
+  P.fetch = (url, opts) => ((typeof content !== 'undefined' && content && typeof content.fetch === 'function')
+    ? content.fetch(url, opts) : fetch(url, opts));
+  // JSON lido como texto: no Firefox o objeto vem do mundo da página; o texto atravessa sem restrição
+  P.lerJson = async (r) => {
+    if (typeof r.text !== 'function') return r.json();
+    const t = await r.text();
+    return t ? JSON.parse(t) : null;
+  };
   P.ler = async (chave, padrao) => {
     try {
       if (temChrome) {
-        const r = await chrome.storage.local.get(chave);
+        const r = await ext.storage.local.get(chave);
         return r[chave] === undefined ? padrao : r[chave];
       }
       const v = localStorage.getItem('plateia:' + chave);
@@ -32,7 +47,7 @@
   };
   P.gravar = async (chave, valor) => {
     try {
-      if (temChrome) return await chrome.storage.local.set({ [chave]: valor });
+      if (temChrome) return await ext.storage.local.set({ [chave]: valor });
       localStorage.setItem('plateia:' + chave, JSON.stringify(valor));
     } catch (e) { /* contexto invalidado (extensão recarregada) */ }
   };
@@ -51,7 +66,7 @@
   P.configKick = async () => Object.assign({}, P.CONFIG_KICK_PADRAO, await P.ler('configKick', {}));
   P.ehKick = () => /(^|\.)kick\.com$/.test(location.hostname);
   P.aoMudar = (fn) => {
-    try { if (temChrome) chrome.storage.onChanged.addListener((m, area) => area === 'local' && fn(m)); } catch (e) {}
+    try { if (temChrome) ext.storage.onChanged.addListener((m, area) => area === 'local' && fn(m)); } catch (e) {}
   };
 
   P.cookie = (k) => {
@@ -69,13 +84,13 @@
   P.gql = async (corpo) => {
     const tok = P.token();
     if (!tok) throw new Error('sem login');
-    const r = await fetch('https://gql.twitch.tv/gql', {
+    const r = await P.fetch('https://gql.twitch.tv/gql', {
       method: 'POST',
       headers: { 'Client-Id': P.CLIENT_ID, 'Authorization': 'OAuth ' + tok, 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(corpo)
     });
     if (!r.ok) throw new Error('gql ' + r.status);
-    return r.json();
+    return P.lerJson(r);
   };
 
   // Uma live está "dentro da sala" quando é um iframe da página-sala (mesma origem).
@@ -93,6 +108,6 @@
     return seg[0].toLowerCase();
   };
   // versão sempre do manifest (regra 9: nunca escrita à mão)
-  P.versao = () => { try { return chrome.runtime.getManifest().version; } catch (e) { return ''; } };
+  P.versao = () => { try { return ext.runtime.getManifest().version; } catch (e) { return ''; } };
   P.log = (...a) => console.debug('[Plateia]', ...a);
 })();

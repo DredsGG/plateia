@@ -149,8 +149,11 @@ function chromeFalso(store, ouvintes) {
   ok('+ lives do PokeIdle: 4 canais com bônus + o manual', cfg().canais.length === 5 && cfg().canais.some((c) => c.login === 'manual1') && cfg().seguirPokeidle === true);
 
   // ajustes com explicação e rodada 20
-  sr().querySelector('details').open = true;
-  ok('ajustes têm explicação embaixo', sr().querySelectorAll('.aj small').length >= 8);
+  [...sr().querySelectorAll('.aba')].find((b) => b.textContent === 'Ajustes').click(); await espera(10);
+  ok('aba Ajustes aparece e tem os 8 ajustes com explicação', sr().querySelector('.aba-aj').style.display === '' && sr().querySelectorAll('.aba-aj .aj small').length === 8);
+  ok('ajustes em 3 grupos', sr().querySelectorAll('.aba-aj .grupo').length === 3);
+  ok('lista com seções (valendo / esperando / offline)', [...sr().querySelectorAll('.secao')].length >= 2);
+  ok('ícones em SVG (sem emoji de olho)', !/👁|◌/.test(sr().textContent) && sr().querySelectorAll('.bts svg').length > 0);
   const assina = sr().querySelector('.assina');
   ok('assinatura "feito por Dreds · v' + manifest.version + '"', assina.textContent === 'feito por Dreds · v' + manifest.version && assina.querySelector('a').textContent === 'Dreds');
 

@@ -17,6 +17,7 @@ await ctx.route('**/*', async (route) => {
   return route.abort();
 });
 let sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
+await sw.evaluate(() => (typeof browser !== 'undefined' ? browser : chrome).storage.local.set({ quadros: { tutorial: true, novidades: chrome.runtime.getManifest().version } })); // tutorial já visto (os quadros cobririam a sala)
 { const ex = await ctx.newPage(); await ex.goto('chrome://extensions'); await ex.evaluate(() => new Promise((ok) => chrome.developerPrivate.updateProfileConfiguration({ inDeveloperMode: true }, ok))); await ex.close(); }
 const extId = sw.url().split('/')[2];
 await new Promise((r) => setTimeout(r, 1500));
@@ -41,7 +42,7 @@ await p.waitForTimeout(1200);
 await p.goto('https://www.twitch.tv/drops/inventory#plateia');
 await p.waitForTimeout(2000);
 const raiz = p.locator('#plateia-sala');
-await raiz.locator('.upd-proc').click();
+await raiz.locator('.upd-proc:not(.upd-bugbt)').click();
 await p.waitForTimeout(1200);
 const card = raiz.locator('.upd-card');
 ok(await card.count() === 1, 'aviso dourado aparece');

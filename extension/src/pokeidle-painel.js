@@ -66,7 +66,7 @@
           const pct = c.custoPacote ? Math.min(100, Math.round((c.saldo || 0) / c.custoPacote * 100)) : 0;
           const falta = c.custoPacote ? Math.max(0, c.custoPacote - (c.saldo || 0)) : 0;
           kk.push(h('div', { class: 'pk-canal' },
-            h('div', { class: 'pk-item' }, h('span', {}, c.nome || c.slug, c.tocando ? h('span', { class: 'tag t1' }, '▶') : null),
+            h('div', { class: 'pk-item' }, h('span', { class: 'pk-nome' }, c.nome || c.slug, c.tocando ? h('span', { class: 'tag t1', title: 'Tocando agora na sala' }, P.ui.icone('play', 9), 'tocando') : null),
               h('span', { class: 'st' }, c.custoPacote ? `${fmt(c.saldo)} / ${fmt(c.custoPacote)}` : 'sem recompensas do PokeIdle')),
             c.custoPacote ? h('div', { class: 'barra' }, h('i', { style: `width:${pct}%` })) : null,
             c.custoPacote && falta ? h('small', { class: 'st' }, `faltam ${fmt(falta)} pts${c.tocando ? ` · ~${duracao(falta / 10 * 5 * 60000)} tocando` : ''}`) : null));
@@ -91,17 +91,18 @@
   };
 
   P.CSS_PAINEL = `
-  .abas{display:flex;gap:4px;border-bottom:1px solid #2f2f35}
-  .aba{background:none;border:0;border-bottom:2px solid transparent;color:#adadb8;padding:6px 10px;font:700 12.5px Inter,Arial,sans-serif;cursor:pointer}
-  .aba.on{color:#fff;border-bottom-color:var(--cor)}
-  .pk-painel{display:flex;flex-direction:column;gap:10px}
-  .pk-sec{background:#18181b;border:1px solid #26262c;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:5px}
-  .pk-tit{font-weight:800;font-size:13px}
-  .pk-tit.tw{color:#bf94ff}.pk-tit.kk{color:#53fc18}
-  .pk-tit small{color:#8d8d97;font-weight:400}
-  .pk-linha{font-size:12.5px}
-  .pk-item{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px}
-  .pk-canal{display:flex;flex-direction:column;gap:2px;padding:3px 0;border-top:1px solid #222227}
-  a.mini{align-self:flex-start;text-decoration:none}
+  .pk-painel{display:flex;flex-direction:column;gap:12px}
+  .pk-sec{background:var(--elev);border-radius:var(--r-card);padding:12px;display:flex;flex-direction:column;gap:7px}
+  .pk-tit{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+  .pk-tit::before{content:"";width:8px;height:8px;border-radius:50%}
+  .pk-tit.tw::before{background:#9147ff}.pk-tit.kk::before{background:#53fc18}
+  .pk-tit small{color:var(--apagado);font-weight:500;font-size:12px}
+  .pk-linha{font-size:13px}
+  .pk-linha b{font-weight:700}
+  .pk-item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;min-height:22px}
+  .pk-nome{display:inline-flex;align-items:center;gap:6px}
+  .pk-canal{display:flex;flex-direction:column;gap:3px;padding:8px 0 2px;border-top:1px solid var(--linha)}
+  a.mini{align-self:flex-start;display:inline-flex;align-items:center;text-decoration:none;color:var(--link)}
   `;
+
 })();

@@ -16,6 +16,9 @@ jobs:
     env:
       TAG: ${{ github.event.release.tag_name }}
       GH_TOKEN: ${{ github.token }}
+      # chaves da API do addons.mozilla.org (Settings > Secrets). Sem elas, o Release sai só com o zip.
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,13 +34,27 @@ jobs:
       - name: Build zip
         run: cd extension && zip -r "../plateia-$TAG.zip" . -x '.*'
 
+      - name: Sign for Firefox (unlisted, self-distributed)
+        if: ${{ env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != '' }}
+        run: |
+          npx --yes web-ext@8 sign --channel=unlisted --source-dir extension --artifacts-dir xpi \
+            --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET" --approval-timeout 900000
+          f="$(ls xpi/*.xpi | head -1)"; cp "$f" "plateia-$TAG.xpi"
+          gh release upload "$TAG" "plateia-$TAG.xpi" --clobber
+          # firefox/updates.json no repo (é o update_url do manifest): o Firefox instala sozinho a versão nova
+          git fetch origin main && git checkout main
+          jq --arg v "${TAG#v}" --arg u "https://github.com/DredsGG/plateia/releases/download/$TAG/plateia-$TAG.xpi" \
+            '.addons["plateia@dredsgg"].updates = [{version: $v, update_link: $u}]' firefox/updates.json > u.json && mv u.json firefox/updates.json
+          git config user.name "André Miller Fleck"
+          git config user.email "217871659+DredsGG@users.noreply.github.com"
+          git add firefox/updates.json && git commit -m "firefox: updates.json for $TAG" && git push origin main
+
       - name: Attach zip and install notes
         env:
           NOTES: |
             ### Install
-            1. Download **plateia-${{ github.event.release.tag_name }}.zip** below.
-            2. Open `chrome://extensions` and turn on **Developer mode**.
-            3. Drag the zip onto the page (or unzip it and use **Load unpacked**).
+            **Chrome, Edge, Brave, Opera GX:** download **plateia-${{ github.event.release.tag_name }}.zip**, unzip it to a folder you'll keep, open the extensions page (`chrome://extensions`, `edge://extensions`, `brave://extensions`, `opera://extensions`), turn on **Developer mode** and click **Load unpacked**.
+            **Firefox 140+:** if there's a **plateia-${{ github.event.release.tag_name }}.xpi** below, click it (signed by Mozilla, updates itself). Otherwise install it as a temporary add-on: unzip the zip, open `about:debugging#/runtime/this-firefox`, click *Load Temporary Add-on…* and pick `manifest.json`. Firefox only keeps Mozilla-signed extensions, so the temporary one is removed when Firefox closes; load it again next time.
         run: |
           gh release upload "$TAG" "plateia-$TAG.zip" --clobber
           gh release view "$TAG" --json body -q .body > old.md

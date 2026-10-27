@@ -64,6 +64,8 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   ok('PokeIdle: canais oficiais entraram na lista', ['matta', 'yoda', 'jukes', 'offline1'].every((s) => a.store.configKick.canais.some((c) => c.slug === s && c.origem === 'pokeidle')));
   ok('modo foco: tocam os 2 mais perto do pacote (yoda 1500, jukes 900)', frames().length === 2 && frames().includes('yoda') && frames().includes('jukes'));
   ok('sem resgate antes de juntar 1.800', !a.chamadas.some((c) => c.u.includes('/redeem')));
+  const pkTxt = () => (a.sr().querySelector('.aba-canais .pk, .conteudo .pk') || {}).textContent || '';
+  ok('resumo do PokeIdle na aba Canais: oficiais ao vivo e próximo pacote (yoda, faltam 300)', /canais oficiais ao vivo/.test(pkTxt()) && /Próximo pacote: yoda, faltam 300 pts/i.test(pkTxt()));
   // yoda chega a 1.800
   a.pts.yoda = 1850;
   await a.w.PLATEIA.kickAtualizar();
@@ -89,6 +91,7 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   await b.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, b.store.pokeidleKick, { em: Date.now() + 1 }) });
   await espera(1500);
   ok('sem vínculo: nenhum resgate', !b.chamadas.some((c) => c.u.includes('/redeem')));
+  ok('sem vínculo: aviso no resumo da aba Canais', /Kick não vinculada no PokeIdle/.test((b.sr().querySelector('.conteudo .pk') || {}).textContent || ''));
   ok('diária com 10/60 min: não tenta pegar', !b.chamadas.some((c) => c.u.includes('challenges/d1/claim')));
   ok('drop sem conta conectada: não tenta pegar', !b.chamadas.some((c) => c.u.includes('drops/claim')));
 

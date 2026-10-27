@@ -27,6 +27,15 @@
   li{margin:5px 0}
   code{background:var(--codigo);border-radius:5px;padding:1px 6px;font-size:14px}
   .tw{color:var(--roxo);font-weight:700}.kk{color:var(--verde);font-weight:700}
+  .navs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+  .navs button{border:1px solid var(--borda);background:var(--cartao);color:var(--texto);border-radius:999px;padding:6px 14px;font:600 14px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
+  .navs button:hover{border-color:var(--roxo)}
+  .navs button.on{background:var(--roxo);border-color:var(--roxo);color:#fff}
+  .nav-bloco{display:none}
+  body[data-nav=chrome] .nav-bloco[data-nav=chrome],body[data-nav=edge] .nav-bloco[data-nav=edge],body[data-nav=brave] .nav-bloco[data-nav=brave],body[data-nav=opera] .nav-bloco[data-nav=opera],body[data-nav=firefox] .nav-bloco[data-nav=firefox]{display:block}
+  h3{margin:14px 0 4px;font-size:16px}
+  .perm{border:2px solid #e5484d}
+  .perm-bt{border:0;border-radius:8px;background:#e5484d;color:#fff;padding:9px 16px;font:700 15px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
   .aviso{border-left:4px solid #c9a227;padding:6px 12px;background:rgba(201,162,39,.1);border-radius:6px}
   footer{max-width:820px;margin:0 auto;padding:0 20px 30px;color:var(--suave);font-size:13px}
   footer a{color:var(--roxo);font-weight:700;text-decoration:none}
@@ -34,7 +43,7 @@
   body.pt [data-lang=pt],body.en [data-lang=en]{display:revert}
 </style>
 </head>
-<body class="pt">
+<body class="pt" data-nav="chrome">
 <div class="topo">
   <img src="icons/128.png" alt="">
   <div>
@@ -48,20 +57,102 @@
   </div>
 </div>
 <main>
+  <section id="permissoes" class="perm" hidden>
+    <h2 data-lang="pt">Falta a permissão dos sites</h2><h2 data-lang="en">Site access is missing</h2>
+    <p data-lang="pt">A Plateia precisa acessar twitch.tv e kick.com para mostrar o botão e as salas. No Firefox essa permissão pode ser desligada em about:addons.</p>
+    <p data-lang="en">Plateia needs access to twitch.tv and kick.com to show its button and rooms. On Firefox this permission can be turned off in about:addons.</p>
+    <button class="perm-bt" id="permitir"><span data-lang="pt">Permitir acesso</span><span data-lang="en">Allow access</span></button>
+  </section>
   <section id="instalar">
     <h2 data-lang="pt">1. Instalar</h2><h2 data-lang="en">1. Install</h2>
-    <ol data-lang="pt">
-      <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
-      <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
-      <li>Abra <code>chrome://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (canto de cima, à direita).</li>
-      <li>Clique em <b>Carregar sem compactação</b> e escolha essa pasta.</li>
-    </ol>
-    <ol data-lang="en">
-      <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
-      <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
-      <li>Open <code>chrome://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
-      <li>Click <b>Load unpacked</b> and pick that folder.</li>
-    </ol>
+    <p data-lang="pt">Escolha o seu navegador:</p><p data-lang="en">Pick your browser:</p>
+    <div class="navs" role="tablist">
+      <button data-nav-bt="chrome">Chrome</button><button data-nav-bt="edge">Edge</button><button data-nav-bt="brave">Brave</button><button data-nav-bt="opera">Opera GX</button><button data-nav-bt="firefox">Firefox</button>
+    </div>
+    <div class="nav-bloco" data-nav="chrome">
+      <ol data-lang="pt">
+        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
+        <li>Abra <code>chrome://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (canto de cima, à direita).</li>
+        <li>Clique em <b>Carregar sem compactação</b> (em inglês, <i>Load unpacked</i>) e escolha essa pasta.</li>
+      </ol>
+      <ol data-lang="en">
+        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
+        <li>Open <code>chrome://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
+        <li>Click <b>Load unpacked</b> and pick that folder.</li>
+      </ol>
+    </div>
+    <div class="nav-bloco" data-nav="edge">
+      <ol data-lang="pt">
+        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
+        <li>Abra <code>edge://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (na coluna da esquerda; em janela estreita, abra o menu ☰ da página).</li>
+        <li>Clique em <b>Carregar sem compactação</b> (em inglês, <i>Load unpacked</i>) e escolha essa pasta.</li>
+      </ol>
+      <ol data-lang="en">
+        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
+        <li>Open <code>edge://extensions</code> and turn on <b>Developer mode</b> (in the left column; in a narrow window, open the page menu ☰).</li>
+        <li>Click <b>Load unpacked</b> and pick that folder.</li>
+      </ol>
+    </div>
+    <div class="nav-bloco" data-nav="brave">
+      <ol data-lang="pt">
+        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
+        <li>Abra <code>brave://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (canto de cima, à direita).</li>
+        <li>Clique em <b>Carregar sem compactação</b> (em inglês, <i>Load unpacked</i>) e escolha essa pasta.</li>
+      </ol>
+      <ol data-lang="en">
+        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
+        <li>Open <code>brave://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
+        <li>Click <b>Load unpacked</b> and pick that folder.</li>
+      </ol>
+    </div>
+    <div class="nav-bloco" data-nav="opera">
+      <ol data-lang="pt">
+        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extraia o zip numa pasta que você não vai apagar (ex.: <code>Documentos\Plateia</code>).</li>
+        <li>Abra <code>opera://extensions</code> e ligue o <b>Modo do desenvolvedor</b> (canto de cima, à direita).</li>
+        <li>Clique em <b>Carregar sem compactação</b> (em inglês, <i>Load unpacked</i>) e escolha essa pasta.</li>
+      </ol>
+      <ol data-lang="en">
+        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
+        <li>Open <code>opera://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
+        <li>Click <b>Load unpacked</b> and pick that folder.</li>
+      </ol>
+      <p class="aviso" data-lang="pt">Se a Plateia sumir ao fechar o Opera GX (há relatos antigos disso com extensões sem compactação), carregue a pasta de novo pelo mesmo botão.</p>
+      <p class="aviso" data-lang="en">If Plateia disappears after closing Opera GX (there are older reports of this with unpacked extensions), load the folder again with the same button.</p>
+    </div>
+    <div class="nav-bloco" data-nav="firefox">
+      <p data-lang="pt">Precisa do Firefox 140 ou mais novo.</p>
+      <p data-lang="en">Needs Firefox 140 or newer.</p>
+      <p class="aviso" data-lang="pt"><b>Por que é temporária no Firefox?</b> É burocracia da Mozilla: o Firefox normal só deixa instalar de vez extensão que a Mozilla assinou. A Plateia ainda não passou por essa assinatura, então por enquanto ela entra como <b>extensão temporária</b>: funciona igual, mas some quando você fecha o Firefox e precisa ser carregada de novo (leva 10 segundos).</p>
+      <p class="aviso" data-lang="en"><b>Why temporary on Firefox?</b> Mozilla paperwork: regular Firefox only keeps extensions that Mozilla has signed. Plateia isn't signed yet, so for now it goes in as a <b>temporary add-on</b>: it works the same, but it's removed when Firefox closes and has to be loaded again (takes 10 seconds).</p>
+      <ol data-lang="pt">
+        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> e extraia numa pasta.</li>
+        <li>Abra <code>about:debugging#/runtime/this-firefox</code>.</li>
+        <li>Clique em <b>Carregar extensão temporária…</b> (<i>Load Temporary Add-on…</i>) e escolha o <code>manifest.json</code> dentro da pasta.</li>
+        <li>Toda vez que abrir o Firefox, repita os passos 2 e 3.</li>
+      </ol>
+      <ol data-lang="en">
+        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> and unzip it into a folder.</li>
+        <li>Open <code>about:debugging#/runtime/this-firefox</code>.</li>
+        <li>Click <b>Load Temporary Add-on…</b> and pick the <code>manifest.json</code> inside the folder.</li>
+        <li>Every time you open Firefox, repeat steps 2 and 3.</li>
+      </ol>
+      <h3 data-lang="pt">Quando o Release tiver um <code>.xpi</code></h3>
+      <h3 data-lang="en">When the release has a <code>.xpi</code></h3>
+      <p data-lang="pt">Se aparecer um <code>plateia-vX.Y.Z.xpi</code> no Release, é a versão assinada: clique nele, confirme <b>Adicionar</b> e pronto, fica de vez e se atualiza sozinha.</p>
+      <p data-lang="en">If a <code>plateia-vX.Y.Z.xpi</code> shows up in the release, that's the signed build: click it, confirm <b>Add</b> and it stays for good and updates itself.</p>
+      <p data-lang="pt">Firefox Developer Edition, Nightly ou ESR: em <code>about:config</code> deixe <code>xpinstall.signatures.required</code> como <b>false</b>, renomeie o zip para <code>.xpi</code> e instale em <code>about:addons</code> → engrenagem → <b>Instalar extensão de um arquivo</b>. Aí fica de vez.</p>
+      <p data-lang="en">Firefox Developer Edition, Nightly or ESR: in <code>about:config</code> set <code>xpinstall.signatures.required</code> to <b>false</b>, rename the zip to <code>.xpi</code> and install it from <code>about:addons</code> → gear → <b>Install Add-on From File</b>. Then it stays.</p>
+      <p data-lang="pt">O botão Plateia não apareceu? Em <code>about:addons</code> → Plateia → <b>Permissões</b>, ligue o acesso a twitch.tv e kick.com.</p>
+      <p data-lang="en">No Plateia button? In <code>about:addons</code> → Plateia → <b>Permissions</b>, turn on access to twitch.tv and kick.com.</p>
+    </div>
   </section>
   <section id="usar">
     <h2 data-lang="pt">2. Usar</h2><h2 data-lang="en">2. Use</h2>
@@ -81,19 +172,21 @@
     <ol data-lang="pt">
       <li>A Plateia procura versão nova no GitHub sozinha (e no botão <b>Procurar atualização</b>, no rodapé das salas). Quando tem, aparece um aviso dourado com o que mudou e uma bolinha no botão Plateia.</li>
       <li>Clique em <b>Atualizar</b>: o zip novo é baixado.</li>
-      <li>Extraia o zip <b>por cima da mesma pasta</b> que você carregou, substituindo os arquivos.</li>
+      <li>Chrome, Edge, Brave e Opera GX: extraia o zip <b>por cima da mesma pasta</b> que você carregou, substituindo os arquivos.</li>
       <li>Pronto: em até 1 minuto a Plateia percebe e se recarrega sozinha, e as salas abertas reabrem na versão nova. Seus ajustes e listas continuam.</li>
     </ol>
     <ol data-lang="en">
       <li>Plateia checks GitHub for new versions by itself (and with the <b>Procurar atualização</b> button in the rooms' footer). When there's one, a golden notice shows what changed and a dot appears on the Plateia button.</li>
       <li>Click <b>Atualizar</b>: the new zip downloads.</li>
-      <li>Unzip it <b>over the same folder</b> you loaded, replacing the files.</li>
+      <li>Chrome, Edge, Brave and Opera GX: unzip it <b>over the same folder</b> you loaded, replacing the files.</li>
       <li>Done: within a minute Plateia notices and reloads itself, and open rooms come back on the new version. Your settings and lists stay.</li>
     </ol>
     <p data-lang="pt"><b>Achou um erro?</b> Clique em <b>Relatar bug</b> no rodapé da sala: abre um relato no GitHub com a versão e um diagnóstico (só números e estados, nada da sua conta). Precisa de conta no GitHub; se não tiver, use <b>Copiar relatório</b>.</p>
     <p data-lang="en"><b>Found a bug?</b> Click <b>Relatar bug</b> in the room footer: it opens a report on GitHub with the version and a diagnostic (only counts and on/off states, nothing from your account). It needs a GitHub account; without one, use <b>Copiar relatório</b> (copy report).</p>
-    <p class="aviso" data-lang="pt">Não mova nem renomeie a pasta: o Chrome perde a extensão e os ajustes.</p>
-    <p class="aviso" data-lang="en">Don't move or rename the folder: Chrome loses the extension and its settings.</p>
+    <p data-lang="pt"><b>Firefox:</b> na instalação temporária, baixe o zip novo e carregue de novo. Com o <code>.xpi</code> assinado (quando houver), a versão nova chega sozinha.</p>
+    <p class="aviso" data-lang="pt">Chrome, Edge, Brave e Opera GX: não mova nem renomeie a pasta, senão o navegador perde a extensão e os ajustes. Deixe o Modo do desenvolvedor ligado: a recarga sozinha depende dele.</p>
+    <p data-lang="en"><b>Firefox:</b> with the temporary install, download the new zip and load it again. With the signed <code>.xpi</code> (when there is one), new versions arrive by themselves.</p>
+    <p class="aviso" data-lang="en">Chrome, Edge, Brave and Opera GX: don't move or rename the folder, or the browser loses the extension and its settings. Keep Developer mode on: the self-reload depends on it.</p>
   </section>
 </main>
 <footer><span data-lang="pt">feito por</span><span data-lang="en">made by</span> <a href="https://github.com/DredsGG" target="_blank" rel="noopener noreferrer">Dreds</a> · <span id="versao"></span></footer>

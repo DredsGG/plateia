@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Plateia",
-  "version": "0.4.2",
+  "version": "0.7.0",
   "description": "Twitch e Kick: baú e pontos automáticos, Drops, sala de multi-live e bônus do PokeIdle (presença na Twitch, resgate em pacote na Kick). Feito por Dreds.",
   "author": "Dreds",
   "homepage_url": "https://github.com/DredsGG",
@@ -21,6 +21,8 @@
       ],
       "js": [
         "src/comum.js",
+        "src/changelog/pt.js",
+        "src/changelog/en.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/bau.js",
@@ -35,6 +37,8 @@
       ],
       "js": [
         "src/comum.js",
+        "src/changelog/pt.js",
+        "src/changelog/en.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/kick/kick.js"
@@ -66,9 +70,26 @@
   "host_permissions": [
     "https://www.twitch.tv/*",
     "https://kick.com/*",
-    "https://api.github.com/*"
+    "https://api.github.com/*",
+    "https://gql.twitch.tv/*",
+    "https://web.kick.com/*"
   ],
   "background": {
-    "service_worker": "src/fundo.js"
+    "service_worker": "src/fundo.js",
+    "scripts": [
+      "src/fundo.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "plateia@dredsgg",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      },
+      "update_url": "https://raw.githubusercontent.com/DredsGG/plateia/main/firefox/updates.json"
+    }
   }
 }

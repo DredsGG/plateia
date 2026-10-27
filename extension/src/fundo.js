@@ -7,7 +7,20 @@
 //   "Atualizar" baixa o zip; quando os arquivos novos chegam na pasta (zip extraído por cima, ou
 //   gravados pela IA), a extensão percebe sozinha em até 1 min e se recarrega, sem ↻.
 // - Depois de recarregar, as abas da Twitch e da Kick recarregam (as salas reabrem sozinhas).
+// Firefox usa `browser` (promessas); Chrome, Edge, Brave e Opera usam `chrome`.
+const ext = (typeof browser !== 'undefined' && browser && browser.runtime) ? browser : chrome;
 const REPO = 'DredsGG/plateia';
+const ehFirefox = () => { try { return ext.runtime.getURL('').startsWith('moz-extension:'); } catch (e) { return false; } };
+// sites que a Plateia precisa (no Firefox o usuário pode tirar a permissão em about:addons)
+const SITES = ['https://www.twitch.tv/*', 'https://kick.com/*'];
+async function conferirPermissoes(abrirGuia) {
+  try {
+    const ok = await ext.permissions.contains({ origins: SITES });
+    await salvar({ semPermissao: !ok });
+    if (!ok && abrirGuia) await ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html#permissoes') });
+    return ok;
+  } catch (e) { return true; }
+}
 const PROCURA_MIN = 360;
 const DISCO_MIN = 1;
 
@@ -20,12 +33,12 @@ const cmpVer = (a, b) => {
   }
   return 0;
 };
-const atual = () => chrome.runtime.getManifest().version;
-const tipoInstalacao = async () => { try { return (await chrome.management.getSelf()).installType; } catch (e) { return 'development'; } };
+const atual = () => ext.runtime.getManifest().version;
+const tipoInstalacao = async () => { try { return (await ext.management.getSelf()).installType; } catch (e) { return 'development'; } };
 const salvar = async (patch) => {
-  const { atualizacao = {} } = await chrome.storage.local.get('atualizacao');
+  const { atualizacao = {} } = await ext.storage.local.get('atualizacao');
   const novo = Object.assign({}, atualizacao, patch);
-  await chrome.storage.local.set({ atualizacao: novo });
+  await ext.storage.local.set({ atualizacao: novo });
   return novo;
 };
 
@@ -38,23 +51,29 @@ async function procurar() {
     const j = await r.json();
     const ultima = String(j.tag_name || '').replace(/^v/i, '');
     const zip = ((j.assets || []).find((a) => /\.zip$/i.test(a.name)) || {}).browser_download_url || null;
-    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, disponivel: !!ultima && cmpVer(ultima, cur) > 0, erro: null }));
+    const xpi = ((j.assets || []).find((a) => /\.xpi$/i.test(a.name)) || {}).browser_download_url || null;
+    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel: !!ultima && cmpVer(ultima, cur) > 0, erro: null }));
   } catch (e) {
     return salvar(Object.assign(base, { erro: String((e && e.message) || e) }));
   }
 }
 
 async function aplicar() {
-  const st = (await chrome.storage.local.get('atualizacao')).atualizacao || {};
+  const st = (await ext.storage.local.get('atualizacao')).atualizacao || {};
   if (await tipoInstalacao() === 'normal') {
-    const res = await new Promise((ok) => chrome.runtime.requestUpdateCheck((status) => ok(status)));
-    if (res === 'update_available') { setTimeout(() => chrome.runtime.reload(), 1500); return { modo: 'loja', status: 'aplicando' }; }
+    // Chrome: {status, version}; Firefox: {status, details}; versões antigas: [status, details]
+    const r = await ext.runtime.requestUpdateCheck();
+    const res = Array.isArray(r) ? r[0] : (r && r.status) || r;
+    if (res === 'update_available') { setTimeout(() => ext.runtime.reload(), 1500); return { modo: 'loja', status: 'aplicando' }; }
     return { modo: 'loja', status: res };
   }
+  // Firefox: o .xpi assinado instala por cima (o próprio Firefox também atualiza pelo update_url).
+  // Sem .xpi no Release (temporária), baixa o zip para carregar de novo.
+  if (ehFirefox() && st.xpi) { await ext.tabs.create({ url: st.xpi, active: true }); await salvar({ baixadoEm: Date.now() }); return { modo: 'xpi', status: 'abrindo' }; }
   const url = st.zip || st.pagina || `https://github.com/${REPO}/releases/latest`;
-  await chrome.tabs.create({ url, active: false });
+  await ext.tabs.create({ url, active: false });
   await salvar({ baixadoEm: Date.now() });
-  return { modo: 'download', status: 'baixado' };
+  return { modo: 'download', status: 'baixado', navegador: ehFirefox() ? 'firefox' : 'chromium' };
 }
 
 // por pasta: versão nova gravada na pasta (o manifest vai por último) → recarrega em 15 s
@@ -62,39 +81,39 @@ let recargaPendente = null;
 async function vigiarDisco() {
   if (await tipoInstalacao() !== 'development') return;
   try {
-    const r = await fetch(chrome.runtime.getURL('manifest.json') + '?t=' + Date.now(), { cache: 'no-store' });
+    const r = await fetch(ext.runtime.getURL('manifest.json') + '?t=' + Date.now(), { cache: 'no-store' });
     const noDisco = (await r.json()).version;
     if (noDisco && noDisco !== atual() && recargaPendente !== noDisco) {
       recargaPendente = noDisco;
-      setTimeout(() => chrome.runtime.reload(), 15000);
+      setTimeout(() => ext.runtime.reload(), 15000);
     }
   } catch (e) { /* manifest no meio da gravação: tenta no próximo minuto */ }
 }
 
 const agendar = () => {
-  chrome.alarms.create('plateia-procura', { delayInMinutes: 1, periodInMinutes: PROCURA_MIN });
-  chrome.alarms.create('plateia-disco', { delayInMinutes: DISCO_MIN, periodInMinutes: DISCO_MIN });
+  ext.alarms.create('plateia-procura', { delayInMinutes: 1, periodInMinutes: PROCURA_MIN });
+  ext.alarms.create('plateia-disco', { delayInMinutes: DISCO_MIN, periodInMinutes: DISCO_MIN });
 };
-chrome.alarms.onAlarm.addListener((a) => {
+ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'plateia-procura') procurar();
   if (a.name === 'plateia-disco') vigiarDisco();
 });
-chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
+ext.runtime.onMessage.addListener((msg, _sender, responder) => {
   if (msg && msg.cmd === 'procurarAtualizacao') { procurar().then(responder); return true; }
   if (msg && msg.cmd === 'aplicarAtualizacao') { aplicar().then(responder, (e) => responder({ status: 'erro', erro: String((e && e.message) || e) })); return true; }
-  if (msg && msg.cmd === 'abrirGuia') { chrome.tabs.create({ url: chrome.runtime.getURL('COMO-INSTALAR.html') + (msg.ancora || '') }).then(() => responder({ ok: true })); return true; }
+  if (msg && msg.cmd === 'abrirGuia') { ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html') + (msg.ancora || '') }).then(() => responder({ ok: true })); return true; }
   return false;
 });
-chrome.runtime.onStartup.addListener(() => { agendar(); procurar(); });
-chrome.runtime.onInstalled.addListener(async (d) => {
+ext.runtime.onStartup.addListener(() => { agendar(); procurar(); conferirPermissoes(true); });
+ext.runtime.onInstalled.addListener(async (d) => {
   agendar();
-  if (d.reason === 'install') chrome.tabs.create({ url: chrome.runtime.getURL('COMO-INSTALAR.html#usar') });
+  if (d.reason === 'install') { await salvar({ instalacaoNova: true }); const ok = await conferirPermissoes(false); ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html' + (ok ? '#usar' : '#permissoes')) }); }
   if (d.reason === 'update') {
     await salvar({ acabouDeAtualizar: { de: d.previousVersion || null, para: atual(), em: Date.now() }, disponivel: false, atual: atual() });
     // as salas abertas ainda rodam a versão antiga: recarregar põe a nova (reabrem sozinhas).
     // As outras abas da Twitch/Kick ficam como estão (o baú continua sendo pego); pegam a nova ao recarregar.
-    const abas = await chrome.tabs.query({ url: ['https://www.twitch.tv/drops/inventory*', 'https://kick.com/drops/claimed*'] });
-    for (const t of abas) chrome.tabs.reload(t.id);
+    const abas = await ext.tabs.query({ url: ['https://www.twitch.tv/drops/inventory*', 'https://kick.com/drops/claimed*'] });
+    for (const t of abas) ext.tabs.reload(t.id);
   }
   procurar();
 });
