@@ -7,7 +7,7 @@ const manifest = JSON.parse(ler('manifest.json'));
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 let falhas = 0; const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') + n); if (!c) falhas++; };
 (async () => {
-  const store = { config: { canais: ['a1', 'b2', 'c3', 'perdido'].map((login) => ({ login, mostrar: true, modo: 'chat' })), seguirPokeidle: false } };
+  const store = { idioma: 'pt', config: { canais: ['a1', 'b2', 'c3', 'perdido'].map((login) => ({ login, mostrar: true, modo: 'chat' })), seguirPokeidle: false } };
   const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://www.twitch.tv/drops/inventory#plateia', runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window;
   w.document.cookie = 'auth-token=x'; w.document.cookie = 'login=eu';
@@ -29,7 +29,7 @@ let falhas = 0; const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') +
     }
     close() {}
   };
-  for (const f of ['src/comum.js', 'src/ui.js', 'src/pokeidle-painel.js', 'src/sala.js']) w.eval(ler(f));
+  for (const f of JSON.parse(require('fs').readFileSync(require('path').join(raiz, 'manifest.json'), 'utf8')).content_scripts[0].js) w.eval(ler(f));
   await espera(400);
   const chip = () => [...w.document.getElementById('plateia-sala').shadowRoot.querySelectorAll('.chip')].find((c) => /no chat/.test(c.textContent)).textContent;
   ok('primeira rodada: 3/4 no chat (um JOIN foi descartado)', /no chat 3\/4/.test(chip()));

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Plateia",
-  "version": "0.7.0",
-  "description": "Twitch e Kick: baú e pontos automáticos, Drops, sala de multi-live e bônus do PokeIdle (presença na Twitch, resgate em pacote na Kick). Feito por Dreds.",
+  "version": "0.8.0",
+  "default_locale": "en",
+  "description": "__MSG_descricao__",
   "author": "Dreds",
   "homepage_url": "https://github.com/DredsGG",
   "permissions": [
@@ -21,8 +22,11 @@
       ],
       "js": [
         "src/comum.js",
+        "src/i18n/en.js",
+        "src/i18n/es.js",
         "src/changelog/pt.js",
         "src/changelog/en.js",
+        "src/changelog/es.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/bau.js",
@@ -37,8 +41,11 @@
       ],
       "js": [
         "src/comum.js",
+        "src/i18n/en.js",
+        "src/i18n/es.js",
         "src/changelog/pt.js",
         "src/changelog/en.js",
+        "src/changelog/es.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/kick/kick.js"

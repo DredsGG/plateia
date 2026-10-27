@@ -40,7 +40,7 @@
   footer{max-width:820px;margin:0 auto;padding:0 20px 30px;color:var(--suave);font-size:13px}
   footer a{color:var(--roxo);font-weight:700;text-decoration:none}
   [data-lang]{display:none}
-  body.pt [data-lang=pt],body.en [data-lang=en]{display:revert}
+  body.pt [data-lang=pt],body.en [data-lang=en],body.es [data-lang=es]{display:revert}
 </style>
 </head>
 <body class="pt" data-nav="chrome">
@@ -50,22 +50,28 @@
     <h1>Plateia</h1>
     <p data-lang="pt">Twitch e Kick: baú, pontos, Drops, salas de multi-live e bônus do PokeIdle.</p>
     <p data-lang="en">Twitch and Kick: chest, points, Drops, multi-live rooms and the PokeIdle bonus.</p>
+    <p data-lang="es">Twitch y Kick: cofre, puntos, Drops, salas multi-directo y el bonus de PokeIdle.</p>
   </div>
   <div class="idiomas">
     <button data-escolher="pt" title="Português" aria-label="Português" class="on"><svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#009c3b"/><path d="M14 2.6 25.2 10 14 17.4 2.8 10z" fill="#ffdf00"/><circle cx="14" cy="10" r="4.6" fill="#002776"/><path d="M9.6 8.9c3-.7 6.2-.3 8.8 1.3" stroke="#fff" stroke-width="1" fill="none"/></svg></button>
     <button data-escolher="en" title="English" aria-label="English"><svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><clipPath id="cu"><rect width="28" height="20" rx="2"/></clipPath><g clip-path="url(#cu)"><rect width="28" height="20" fill="#fff"/><rect y="0.00" width="28" height="1.54" fill="#b22234"/><rect y="3.08" width="28" height="1.54" fill="#b22234"/><rect y="6.15" width="28" height="1.54" fill="#b22234"/><rect y="9.23" width="28" height="1.54" fill="#b22234"/><rect y="12.31" width="28" height="1.54" fill="#b22234"/><rect y="15.38" width="28" height="1.54" fill="#b22234"/><rect y="18.46" width="28" height="1.54" fill="#b22234"/><rect width="12.6" height="10.77" fill="#3c3b6e"/><circle cx="1.6" cy="1.4" r=".45" fill="#fff"/><circle cx="4.0" cy="1.4" r=".45" fill="#fff"/><circle cx="6.4" cy="1.4" r=".45" fill="#fff"/><circle cx="8.8" cy="1.4" r=".45" fill="#fff"/><circle cx="11.2" cy="1.4" r=".45" fill="#fff"/><circle cx="2.8" cy="3.3" r=".45" fill="#fff"/><circle cx="5.2" cy="3.3" r=".45" fill="#fff"/><circle cx="7.6" cy="3.3" r=".45" fill="#fff"/><circle cx="10.0" cy="3.3" r=".45" fill="#fff"/><circle cx="1.6" cy="5.2" r=".45" fill="#fff"/><circle cx="4.0" cy="5.2" r=".45" fill="#fff"/><circle cx="6.4" cy="5.2" r=".45" fill="#fff"/><circle cx="8.8" cy="5.2" r=".45" fill="#fff"/><circle cx="11.2" cy="5.2" r=".45" fill="#fff"/><circle cx="2.8" cy="7.1" r=".45" fill="#fff"/><circle cx="5.2" cy="7.1" r=".45" fill="#fff"/><circle cx="7.6" cy="7.1" r=".45" fill="#fff"/><circle cx="10.0" cy="7.1" r=".45" fill="#fff"/><circle cx="1.6" cy="9.0" r=".45" fill="#fff"/><circle cx="4.0" cy="9.0" r=".45" fill="#fff"/><circle cx="6.4" cy="9.0" r=".45" fill="#fff"/><circle cx="8.8" cy="9.0" r=".45" fill="#fff"/><circle cx="11.2" cy="9.0" r=".45" fill="#fff"/></g></svg></button>
+    <button data-escolher="es" title="Español" aria-label="Español"><svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true"><clipPath id="ce"><rect width="28" height="20" rx="2"/></clipPath><g clip-path="url(#ce)"><rect width="28" height="20" fill="#aa151b"/><rect y="5" width="28" height="10" fill="#f1bf00"/></g></svg></button>
   </div>
 </div>
 <main>
   <section id="permissoes" class="perm" hidden>
     <h2 data-lang="pt">Falta a permissão dos sites</h2><h2 data-lang="en">Site access is missing</h2>
+    <h2 data-lang="es">Falta el permiso de los sitios</h2>
     <p data-lang="pt">A Plateia precisa acessar twitch.tv e kick.com para mostrar o botão e as salas. No Firefox essa permissão pode ser desligada em about:addons.</p>
     <p data-lang="en">Plateia needs access to twitch.tv and kick.com to show its button and rooms. On Firefox this permission can be turned off in about:addons.</p>
-    <button class="perm-bt" id="permitir"><span data-lang="pt">Permitir acesso</span><span data-lang="en">Allow access</span></button>
+    <p data-lang="es">Plateia necesita acceso a twitch.tv y kick.com para mostrar su botón y las salas. En Firefox este permiso se puede desactivar en about:addons.</p>
+    <button class="perm-bt" id="permitir"><span data-lang="pt">Permitir acesso</span><span data-lang="en">Allow access</span><span data-lang="es">Permitir acceso</span></button>
   </section>
   <section id="instalar">
     <h2 data-lang="pt">1. Instalar</h2><h2 data-lang="en">1. Install</h2>
+    <h2 data-lang="es">1. Instalar</h2>
     <p data-lang="pt">Escolha o seu navegador:</p><p data-lang="en">Pick your browser:</p>
+    <p data-lang="es">Elige tu navegador:</p>
     <div class="navs" role="tablist">
       <button data-nav-bt="chrome">Chrome</button><button data-nav-bt="edge">Edge</button><button data-nav-bt="brave">Brave</button><button data-nav-bt="opera">Opera GX</button><button data-nav-bt="firefox">Firefox</button>
     </div>
@@ -82,6 +88,12 @@
         <li>Open <code>chrome://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
         <li>Click <b>Load unpacked</b> and pick that folder.</li>
       </ol>
+      <ol data-lang="es">
+        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extráelo en una carpeta que vayas a conservar (ej.: <code>Documentos\Plateia</code>).</li>
+        <li>Abre <code>chrome://extensions</code> y activa el <b>Modo de desarrollador</b> (arriba a la derecha).</li>
+        <li>Haz clic en <b>Cargar descomprimida</b> y elige esa carpeta.</li>
+      </ol>
     </div>
     <div class="nav-bloco" data-nav="edge">
       <ol data-lang="pt">
@@ -95,6 +107,12 @@
         <li>Unzip it into a folder you'll keep (e.g. <code>Documents\Plateia</code>).</li>
         <li>Open <code>edge://extensions</code> and turn on <b>Developer mode</b> (in the left column; in a narrow window, open the page menu ☰).</li>
         <li>Click <b>Load unpacked</b> and pick that folder.</li>
+      </ol>
+      <ol data-lang="es">
+        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extráelo en una carpeta que vayas a conservar (ej.: <code>Documentos\Plateia</code>).</li>
+        <li>Abre <code>edge://extensions</code> y activa el <b>Modo de desarrollador</b> (en la columna de la izquierda; con la ventana angosta, abre el menú ☰ de la página).</li>
+        <li>Haz clic en <b>Cargar descomprimida</b> y elige esa carpeta.</li>
       </ol>
     </div>
     <div class="nav-bloco" data-nav="brave">
@@ -110,6 +128,12 @@
         <li>Open <code>brave://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
         <li>Click <b>Load unpacked</b> and pick that folder.</li>
       </ol>
+      <ol data-lang="es">
+        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extráelo en una carpeta que vayas a conservar (ej.: <code>Documentos\Plateia</code>).</li>
+        <li>Abre <code>brave://extensions</code> y activa el <b>Modo de desarrollador</b> (arriba a la derecha).</li>
+        <li>Haz clic en <b>Cargar descomprimida</b> y elige esa carpeta.</li>
+      </ol>
     </div>
     <div class="nav-bloco" data-nav="opera">
       <ol data-lang="pt">
@@ -124,14 +148,23 @@
         <li>Open <code>opera://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
         <li>Click <b>Load unpacked</b> and pick that folder.</li>
       </ol>
+      <ol data-lang="es">
+        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a>.</li>
+        <li>Extráelo en una carpeta que vayas a conservar (ej.: <code>Documentos\Plateia</code>).</li>
+        <li>Abre <code>opera://extensions</code> y activa el <b>Modo de desarrollador</b> (arriba a la derecha).</li>
+        <li>Haz clic en <b>Cargar descomprimida</b> y elige esa carpeta.</li>
+      </ol>
       <p class="aviso" data-lang="pt">Se a Plateia sumir ao fechar o Opera GX (há relatos antigos disso com extensões sem compactação), carregue a pasta de novo pelo mesmo botão.</p>
       <p class="aviso" data-lang="en">If Plateia disappears after closing Opera GX (there are older reports of this with unpacked extensions), load the folder again with the same button.</p>
+      <p class="aviso" data-lang="es">Si Plateia desaparece al cerrar Opera GX (hay reportes antiguos de esto con extensiones descomprimidas), carga la carpeta de nuevo con el mismo botón.</p>
     </div>
     <div class="nav-bloco" data-nav="firefox">
       <p data-lang="pt">Precisa do Firefox 140 ou mais novo.</p>
       <p data-lang="en">Needs Firefox 140 or newer.</p>
+      <p data-lang="es">Necesita Firefox 140 o más reciente.</p>
       <p class="aviso" data-lang="pt"><b>Por que é temporária no Firefox?</b> É burocracia da Mozilla: o Firefox normal só deixa instalar de vez extensão que a Mozilla assinou. A Plateia ainda não passou por essa assinatura, então por enquanto ela entra como <b>extensão temporária</b>: funciona igual, mas some quando você fecha o Firefox e precisa ser carregada de novo (leva 10 segundos).</p>
       <p class="aviso" data-lang="en"><b>Why temporary on Firefox?</b> Mozilla paperwork: regular Firefox only keeps extensions that Mozilla has signed. Plateia isn't signed yet, so for now it goes in as a <b>temporary add-on</b>: it works the same, but it's removed when Firefox closes and has to be loaded again (takes 10 seconds).</p>
+      <p class="aviso" data-lang="es"><b>¿Por qué es temporal en Firefox?</b> Es burocracia de Mozilla: el Firefox normal solo conserva extensiones firmadas por Mozilla. Plateia aún no tiene esa firma, así que por ahora entra como <b>complemento temporal</b>: funciona igual, pero se quita al cerrar Firefox y hay que cargarla de nuevo (tarda 10 segundos).</p>
       <ol data-lang="pt">
         <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> e extraia numa pasta.</li>
         <li>Abra <code>about:debugging#/runtime/this-firefox</code>.</li>
@@ -144,52 +177,81 @@
         <li>Click <b>Load Temporary Add-on…</b> and pick the <code>manifest.json</code> inside the folder.</li>
         <li>Every time you open Firefox, repeat steps 2 and 3.</li>
       </ol>
+      <ol data-lang="es">
+        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> y extráelo en una carpeta.</li>
+        <li>Abre <code>about:debugging#/runtime/this-firefox</code>.</li>
+        <li>Haz clic en <b>Cargar complemento temporal…</b> y elige el <code>manifest.json</code> dentro de la carpeta.</li>
+        <li>Cada vez que abras Firefox, repite los pasos 2 y 3.</li>
+      </ol>
       <h3 data-lang="pt">Quando o Release tiver um <code>.xpi</code></h3>
       <h3 data-lang="en">When the release has a <code>.xpi</code></h3>
+      <h3 data-lang="es">Cuando el Release tenga un <code>.xpi</code></h3>
       <p data-lang="pt">Se aparecer um <code>plateia-vX.Y.Z.xpi</code> no Release, é a versão assinada: clique nele, confirme <b>Adicionar</b> e pronto, fica de vez e se atualiza sozinha.</p>
       <p data-lang="en">If a <code>plateia-vX.Y.Z.xpi</code> shows up in the release, that's the signed build: click it, confirm <b>Add</b> and it stays for good and updates itself.</p>
+      <p data-lang="es">Si aparece un <code>plateia-vX.Y.Z.xpi</code> en el Release, es la versión firmada: haz clic, confirma <b>Añadir</b> y listo, queda instalada y se actualiza sola.</p>
       <p data-lang="pt">Firefox Developer Edition, Nightly ou ESR: em <code>about:config</code> deixe <code>xpinstall.signatures.required</code> como <b>false</b>, renomeie o zip para <code>.xpi</code> e instale em <code>about:addons</code> → engrenagem → <b>Instalar extensão de um arquivo</b>. Aí fica de vez.</p>
       <p data-lang="en">Firefox Developer Edition, Nightly or ESR: in <code>about:config</code> set <code>xpinstall.signatures.required</code> to <b>false</b>, rename the zip to <code>.xpi</code> and install it from <code>about:addons</code> → gear → <b>Install Add-on From File</b>. Then it stays.</p>
+      <p data-lang="es">Firefox Developer Edition, Nightly o ESR: en <code>about:config</code> pon <code>xpinstall.signatures.required</code> en <b>false</b>, renombra el zip a <code>.xpi</code> e instálalo desde <code>about:addons</code> → engranaje → <b>Instalar complemento desde archivo</b>. Así queda instalada.</p>
       <p data-lang="pt">O botão Plateia não apareceu? Em <code>about:addons</code> → Plateia → <b>Permissões</b>, ligue o acesso a twitch.tv e kick.com.</p>
       <p data-lang="en">No Plateia button? In <code>about:addons</code> → Plateia → <b>Permissions</b>, turn on access to twitch.tv and kick.com.</p>
+      <p data-lang="es">¿No apareció el botón Plateia? En <code>about:addons</code> → Plateia → <b>Permisos</b>, activa el acceso a twitch.tv y kick.com.</p>
     </div>
   </section>
   <section id="usar">
     <h2 data-lang="pt">2. Usar</h2><h2 data-lang="en">2. Use</h2>
+    <h2 data-lang="es">2. Usar</h2>
     <ul data-lang="pt">
       <li><span class="tw">Twitch:</span> o baú de +50 é pego sozinho em qualquer aba. O botão roxo <b>Plateia</b> (canto de baixo, à esquerda) abre a sala: você fica no chat de todos os canais da lista e 2 lives tocam valendo pontos.</li>
       <li><span class="kk">Kick:</span> o botão verde <b>Plateia</b> abre a sala da Kick: 2 lives valendo pontos, Daily Reward e Drops pegos sozinhos.</li>
       <li><b>PokeIdle:</b> com o jogo aberto numa aba, recarregue a aba do jogo (F5) uma vez. A Plateia lê os canais oficiais com bônus. Na Kick, ela junta pontos até dar um de cada (XP + Capture Boost + Secret Lure) e resgata os três, só com a Kick vinculada no jogo.</li>
+      <li><b>Idioma:</b> a Plateia usa o idioma do navegador (português, inglês ou espanhol). Troque quando quiser no seletor <b>PT · EN · ES</b>, no rodapé da sala.</li>
     </ul>
     <ul data-lang="en">
       <li><span class="tw">Twitch:</span> the +50 chest is claimed by itself on any tab. The purple <b>Plateia</b> button (bottom left) opens the room: you're in the chat of every channel on the list and 2 lives play for points.</li>
       <li><span class="kk">Kick:</span> the green <b>Plateia</b> button opens the Kick room: 2 lives earning points, Daily Reward and Drops claimed by themselves.</li>
       <li><b>PokeIdle:</b> with the game open in a tab, reload the game tab (F5) once. Plateia reads the official bonus channels. On Kick it saves points until it can buy one of each (XP + Capture Boost + Secret Lure) and redeems all three, only with Kick linked inside the game.</li>
+      <li><b>Language:</b> Plateia uses your browser language (Portuguese, English or Spanish). Switch it any time with the <b>PT · EN · ES</b> selector in the room footer.</li>
+    </ul>
+    <ul data-lang="es">
+      <li><span class="tw">Twitch:</span> el cofre de +50 se reclama solo en cualquier pestaña. El botón morado <b>Plateia</b> (abajo a la izquierda) abre la sala: estás en el chat de todos los canales de la lista y 2 directos se reproducen sumando puntos.</li>
+      <li><span class="kk">Kick:</span> el botón verde <b>Plateia</b> abre la sala de Kick: 2 directos sumando puntos, Daily Reward y Drops reclamados solos.</li>
+      <li><b>PokeIdle:</b> con el juego abierto en una pestaña, recarga la pestaña del juego (F5) una vez. Plateia lee los canales oficiales con bonus. En Kick junta puntos hasta poder comprar uno de cada (XP + Capture Boost + Secret Lure) y canjea los tres, solo con Kick vinculada en el juego.</li>
+      <li><b>Idioma:</b> Plateia usa el idioma del navegador (portugués, inglés o español). Cámbialo cuando quieras en el selector <b>PT · EN · ES</b>, en el pie de la sala.</li>
     </ul>
   </section>
   <section id="atualizar">
     <h2 data-lang="pt">3. Atualizar</h2><h2 data-lang="en">3. Update</h2>
+    <h2 data-lang="es">3. Actualizar</h2>
     <ol data-lang="pt">
-      <li>A Plateia procura versão nova no GitHub sozinha (e no botão <b>Procurar atualização</b>, no rodapé das salas). Quando tem, aparece um aviso dourado com o que mudou e uma bolinha no botão Plateia.</li>
+      <li>A Plateia procura versão nova no GitHub sozinha: ao abrir o navegador, a cada 6 horas e no botão <b>Procurar atualização</b>, no rodapé das salas. Quando tem, aparece sozinho um quadro <b>Nova versão</b> no meio da página da Twitch ou da Kick, com o que mudou (o X esconde até sair uma versão mais nova).</li>
       <li>Clique em <b>Atualizar</b>: o zip novo é baixado.</li>
       <li>Chrome, Edge, Brave e Opera GX: extraia o zip <b>por cima da mesma pasta</b> que você carregou, substituindo os arquivos.</li>
       <li>Pronto: em até 1 minuto a Plateia percebe e se recarrega sozinha, e as salas abertas reabrem na versão nova. Seus ajustes e listas continuam.</li>
     </ol>
     <ol data-lang="en">
-      <li>Plateia checks GitHub for new versions by itself (and with the <b>Procurar atualização</b> button in the rooms' footer). When there's one, a golden notice shows what changed and a dot appears on the Plateia button.</li>
-      <li>Click <b>Atualizar</b>: the new zip downloads.</li>
+      <li>Plateia checks GitHub for new versions by itself: when the browser opens, every 6 hours and with the <b>Check for updates</b> button in the rooms' footer. When there's one, a <b>New version</b> box shows up by itself in the middle of the Twitch or Kick page, with what changed (the X hides it until a newer version comes out).</li>
+      <li>Click <b>Update</b>: the new zip downloads.</li>
       <li>Chrome, Edge, Brave and Opera GX: unzip it <b>over the same folder</b> you loaded, replacing the files.</li>
       <li>Done: within a minute Plateia notices and reloads itself, and open rooms come back on the new version. Your settings and lists stay.</li>
     </ol>
+    <ol data-lang="es">
+      <li>Plateia busca versiones nuevas en GitHub sola: al abrir el navegador, cada 6 horas y con el botón <b>Buscar actualización</b>, en el pie de las salas. Cuando hay una, aparece solo un cuadro <b>Nueva versión</b> en el medio de la página de Twitch o Kick, con lo que cambió (la X lo oculta hasta que salga una versión más nueva).</li>
+      <li>Haz clic en <b>Actualizar</b>: se descarga el zip nuevo.</li>
+      <li>Chrome, Edge, Brave y Opera GX: extráelo <b>encima de la misma carpeta</b> que cargaste, reemplazando los archivos.</li>
+      <li>Listo: en hasta 1 minuto Plateia lo nota y se recarga sola, y las salas abiertas vuelven en la versión nueva. Tus ajustes y listas se mantienen.</li>
+    </ol>
     <p data-lang="pt"><b>Achou um erro?</b> Clique em <b>Relatar bug</b> no rodapé da sala: abre um relato no GitHub com a versão e um diagnóstico (só números e estados, nada da sua conta). Precisa de conta no GitHub; se não tiver, use <b>Copiar relatório</b>.</p>
-    <p data-lang="en"><b>Found a bug?</b> Click <b>Relatar bug</b> in the room footer: it opens a report on GitHub with the version and a diagnostic (only counts and on/off states, nothing from your account). It needs a GitHub account; without one, use <b>Copiar relatório</b> (copy report).</p>
+    <p data-lang="en"><b>Found a bug?</b> Click <b>Report bug</b> in the room footer: it opens a report on GitHub with the version and a diagnostic (only counts and on/off states, nothing from your account). It needs a GitHub account; without one, use <b>Copy report</b>.</p>
+    <p data-lang="es"><b>¿Encontraste un bug?</b> Haz clic en <b>Reportar bug</b> en el pie de la sala: abre un reporte en GitHub con la versión y un diagnóstico (solo números y estados activado/desactivado, nada de tu cuenta). Necesita cuenta de GitHub; sin ella, usa <b>Copiar reporte</b>.</p>
     <p data-lang="pt"><b>Firefox:</b> na instalação temporária, baixe o zip novo e carregue de novo. Com o <code>.xpi</code> assinado (quando houver), a versão nova chega sozinha.</p>
     <p class="aviso" data-lang="pt">Chrome, Edge, Brave e Opera GX: não mova nem renomeie a pasta, senão o navegador perde a extensão e os ajustes. Deixe o Modo do desenvolvedor ligado: a recarga sozinha depende dele.</p>
     <p data-lang="en"><b>Firefox:</b> with the temporary install, download the new zip and load it again. With the signed <code>.xpi</code> (when there is one), new versions arrive by themselves.</p>
+    <p data-lang="es"><b>Firefox:</b> con la instalación temporal, descarga el zip nuevo y cárgalo de nuevo. Con el <code>.xpi</code> firmado (cuando lo haya), las versiones nuevas llegan solas.</p>
     <p class="aviso" data-lang="en">Chrome, Edge, Brave and Opera GX: don't move or rename the folder, or the browser loses the extension and its settings. Keep Developer mode on: the self-reload depends on it.</p>
+    <p class="aviso" data-lang="es">Chrome, Edge, Brave y Opera GX: no muevas ni renombres la carpeta, o el navegador pierde la extensión y sus ajustes. Deja el Modo de desarrollador activado: la recarga automática depende de él.</p>
   </section>
 </main>
-<footer><span data-lang="pt">feito por</span><span data-lang="en">made by</span> <a href="https://github.com/DredsGG" target="_blank" rel="noopener noreferrer">Dreds</a> · <span id="versao"></span></footer>
+<footer><span data-lang="pt">feito por</span><span data-lang="en">made by</span><span data-lang="es">hecho por</span> <a href="https://github.com/DredsGG" target="_blank" rel="noopener noreferrer">Dreds</a> · <span id="versao"></span></footer>
 <script src="guia/guia.js"></script>
 </body>
 </html>

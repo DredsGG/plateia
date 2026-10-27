@@ -10,7 +10,7 @@ const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') + n); if (!c) fal
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function montar({ vinculado = true, saldos, recompensas3 = true, diariaProg = 60, dropConectado = true }) {
-  const store = {}, ouvintes = [];
+  const store = { idioma: 'pt' }, ouvintes = [];
   store.pokeidleKick = { vinculado, login: 'dredsgg', pct: 0, minutos: 60, em: Date.now(),
     bonus: { xp: Date.now() + 80 * 60000, captura: 0, shiny: 0 },
     oficiais: [{ slug: 'matta', nome: 'matta', aoVivo: true, ativo: true }, { slug: 'yoda', nome: 'yoda', aoVivo: true, ativo: true }, { slug: 'jukes', nome: 'jukes', aoVivo: true, ativo: true }, { slug: 'offline1', nome: 'off', aoVivo: false, ativo: true }],
@@ -52,7 +52,7 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
     if (u.includes('drops/claim')) return resp({ data: { id: 'x' } });
     return resp({}, 404);
   };
-  for (const f of ['src/comum.js', 'src/ui.js', 'src/pokeidle-painel.js', 'src/kick/kick.js']) w.eval(ler(f));
+  for (const f of JSON.parse(require('fs').readFileSync(require('path').join(raiz, 'manifest.json'), 'utf8')).content_scripts[1].js) w.eval(ler(f));
   await espera(400);
   return { w, store, chamadas, pts, sr: () => w.document.getElementById('plateia-sala').shadowRoot };
 }

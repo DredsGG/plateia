@@ -110,4 +110,30 @@
   // versão sempre do manifest (regra 9: nunca escrita à mão)
   P.versao = () => { try { return ext.runtime.getManifest().version; } catch (e) { return ''; } };
   P.log = (...a) => console.debug('[Plateia]', ...a);
+
+  // ---------- Idiomas (regra 13): português, inglês e espanhol ----------
+  // Chave = texto em português; os dicionários de en/es ficam em src/i18n/en.js e es.js.
+  // Variáveis entre chaves: t('troca em {t}', { t: '3:20' }).
+  P.IDIOMAS = ['pt', 'en', 'es'];
+  P.DIC = P.DIC || {};
+  P.idioma = 'pt';
+  P.idiomaDoNavegador = () => {
+    let l = '';
+    try { l = (ext && ext.i18n && ext.i18n.getUILanguage && ext.i18n.getUILanguage()) || ''; } catch (e) {}
+    if (!l) l = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    l = String(l).toLowerCase();
+    return l.startsWith('pt') ? 'pt' : l.startsWith('es') ? 'es' : 'en';
+  };
+  P.idiomaPronto = (async () => {
+    const salvo = await P.ler('idioma', null);
+    P.idioma = P.IDIOMAS.includes(salvo) ? salvo : P.idiomaDoNavegador();
+    return P.idioma;
+  })();
+  P.t = (txt, vars) => {
+    let s = P.idioma === 'pt' ? txt : ((P.DIC[P.idioma] && P.DIC[P.idioma][txt]) || txt);
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.split('{' + k + '}').join(String(v));
+    return s;
+  };
+  P.local = () => ({ pt: 'pt-BR', en: 'en-US', es: 'es-ES' })[P.idioma] || 'en-US';
+  P.trocarIdioma = async (l) => { if (!P.IDIOMAS.includes(l)) return; await P.gravar('idioma', l); P.idioma = l; };
 })();

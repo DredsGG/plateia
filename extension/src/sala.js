@@ -4,6 +4,7 @@
   if (!P || window.top !== window || P.salaIniciada) return;
   P.salaIniciada = true;
 
+  const tr = (txt, vars) => P.t(txt, vars);
   const URL_SALA = 'https://www.twitch.tv/drops/inventory' + P.HASH_SALA;
   const MAX_VAGAS = 4;
   const LISTA_VELHA_POKEIDLE = ['faasii', 'tftoddy', 'axtlol', 'xdaren_', 'cogu'];
@@ -25,7 +26,7 @@
     return el;
   }
   const repor = (el, ...filhos) => el.replaceChildren(...filhos.flat().filter((f) => f !== null && f !== undefined && f !== false));
-  const fmt = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('pt-BR'));
+  const fmt = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString(P.local()));
   const mmss = (ms) => { ms = Math.max(0, ms); const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 
   function abrirSala() {
@@ -44,10 +45,12 @@
         box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;opacity:.92}
       button:hover{opacity:1;background:#a970ff}
       .ic{width:18px;height:18px}` + ((P.ui && P.ui.CSS_BOLINHA) || '')));
-    const bt = h('button', { title: 'Abrir a sala de multi-live da Plateia', onclick: abrirSala }, icone(), 'Plateia');
+    const bt = h('button', { title: tr('Abrir a sala de multi-live da Plateia'), onclick: abrirSala }, icone(), 'Plateia');
     raiz.appendChild(bt);
     if (P.ui && P.ui.marcarNovidade) P.ui.marcarNovidade(bt);
     document.documentElement.appendChild(host);
+    // regra 14: tutorial, novidades e versão nova aparecem sozinhos aqui, sem abrir a sala
+    if (P.ui && P.ui.avisosSite) P.ui.avisosSite({ sala: 'twitch', abrirSala });
   }
   function icone() {
     if (P.ui && P.ui.logo) { const l = P.ui.logo(20); l.setAttribute('class', 'ic'); return l; }
@@ -67,15 +70,18 @@
     else botaoAbrir();
   }
   window.addEventListener('hashchange', talvezSala);
-  talvezSala();
+  P.idiomaPronto.then(talvezSala);
 
   async function iniciarSala() {
     salaAtiva = true;
+    await P.idiomaPronto;
     const ehJanela = !!window.opener || window.name === 'plateia';
     window.name = 'plateia';
     document.documentElement.dataset.plateia = 'sala';
     const lanc = document.getElementById('plateia-lancador');
     if (lanc) lanc.remove();
+    const avisos = document.getElementById('plateia-avisos');
+    if (avisos) { if (P.avisos) P.avisos.parar(); avisos.remove(); }
 
     let cfg = await P.config();
     const salvar = () => P.gravar('config', cfg);
@@ -110,12 +116,12 @@
     const ic = P.ui.icone;
     const app = h('div', { class: 'app' },
       h('header', {},
-        h('div', { class: 'marca' }, icone(), h('b', {}, 'Plateia'), h('span', { class: 'sub' }, 'sala da Twitch')),
+        h('div', { class: 'marca' }, icone(), h('b', {}, 'Plateia'), h('span', { class: 'sub' }, tr('sala da Twitch'))),
         els.chips = h('div', { class: 'chips' }),
         h('div', { class: 'acoes' },
           els.ajuda = h('span', { class: 'ajuda' }),
-          ehJanela ? null : h('button', { class: 'bt sec', onclick: abrirSala, title: 'Abre a sala numa janela só dela' }, ic('janela'), 'Abrir em janela própria'),
-          h('button', { class: 'bt fantasma', onclick: fecharSala, title: 'Fecha a sala (as lives param de contar)' }, ic('sair'), 'Fechar sala'))),
+          ehJanela ? null : h('button', { class: 'bt sec', onclick: abrirSala, title: tr('Abre a sala numa janela só dela') }, ic('janela'), tr('Abrir em janela própria')),
+          h('button', { class: 'bt fantasma', onclick: fecharSala, title: tr('Fecha a sala (as lives param de contar)') }, ic('sair'), tr('Fechar sala')))),
       h('div', { class: 'corpo' },
         h('aside', {},
           els.abas = h('div', { class: 'abas' }),
@@ -123,26 +129,26 @@
           els.abaAj = h('div', { class: 'aba-aj', style: 'display:none' }),
           els.abaCanais = h('div', { class: 'aba-canais' },
           h('form', { class: 'add', onsubmit: (e) => { e.preventDefault(); adicionar(els.input.value); els.input.value = ''; } },
-            els.input = h('input', { placeholder: 'canal ou link (ex.: gaules)', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Adicionar canal' }),
-            h('button', { class: 'bt' }, 'Adicionar')),
+            els.input = h('input', { placeholder: tr('canal ou link (ex.: gaules)'), autocomplete: 'off', spellcheck: 'false', 'aria-label': tr('Adicionar canal') }),
+            h('button', { class: 'bt' }, tr('Adicionar'))),
           h('div', { class: 'atalhos' },
-            h('button', { class: 'lk', onclick: puxarSeguidos, title: 'Adiciona os canais que você segue e estão ao vivo agora' }, ic('mais'), 'seguidos ao vivo'),
-            els.btPk = h('button', { class: 'lk', onclick: () => adicionarPokeidle() }, ic('mais'), 'lives do PokeIdle')),
+            h('button', { class: 'lk', onclick: puxarSeguidos, title: tr('Adiciona os canais que você segue e estão ao vivo agora') }, ic('mais'), tr('seguidos ao vivo')),
+            els.btPk = h('button', { class: 'lk', onclick: () => adicionarPokeidle() }, ic('mais'), tr('lives do PokeIdle'))),
           els.pk = h('div', { class: 'pk' }),
           els.lista = h('div', { class: 'lista' }),
           els.barra = h('div', { class: 'barra-lista' }),
           els.drops = h('div', { class: 'drops' }),
           h('p', { class: 'nota' },
-            'A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. ',
-            'Os outros canais ficam com você presente no chat.')),
+            tr('A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. '),
+            tr('Os outros canais ficam com você presente no chat.'))),
           P.ui.atualizacao({ sala: 'Twitch', diagnostico: () => diagnosticoSala() }),
-          P.ui.assinatura()),
+          h('div', { class: 'rodape-fim' }, P.ui.assinatura(), P.ui.seletorIdioma())),
         els.palco = h('main', { class: 'palco' },
-          els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, 'Adicione canais na lista. As lives que estiverem valendo aparecem aqui.')))));
+          els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, tr('Adicione canais na lista. As lives que estiverem valendo aparecem aqui.'))))));
     raiz.appendChild(app);
     document.documentElement.appendChild(host);
     document.body && (document.body.style.overflow = 'hidden');
-    document.title = 'Plateia · sala';
+    document.title = tr('Plateia · sala');
     // tutorial (1ª vez) e novidades (depois de atualizar), regra 12
     const qd = P.ui.quadros({ app: raiz.querySelector('.app'), sala: 'twitch' });
     els.ajuda.replaceWith(qd.botao);
@@ -153,16 +159,16 @@
     function diagnosticoSala() {
       const total = cfg.canais.length;
       return [
-        ['Login na Twitch', P.token() ? 'sim' : 'não'],
-        ['Canais na lista', `${total} (${cfg.canais.filter((c) => aoVivo(c.login)).length} ao vivo; fixos ${cfg.canais.filter((c) => modo(c) === 'fixo').length}, só chat ${cfg.canais.filter((c) => modo(c) === 'chat').length})`],
-        ['Valendo', `${vagasAtuais.length}/${vagasN()}`],
-        ['Chat', cfg.presencaChat ? `${noChat.size}/${total}${ircPronto ? '' : ' (desconectado)'}${ircErro ? ' · ' + ircErro : ''}` : 'desligado'],
-        ['Rodízio', cfg.rodizio ? `${cfg.rodizioMin} min` : 'desligado'],
-        ['Baú / Drops automáticos', `${cfg.bauAuto ? 'sim' : 'não'} / ${cfg.dropsAuto ? 'sim' : 'não'}`],
-        ['Lives em 160p', cfg.qualidadeBaixa ? 'sim' : 'não'],
-        ['PokeIdle', pk ? `${pk.vinculado ? 'vinculado' : 'não vinculado'} · ${pkComBonus().length} canais com bônus · dados de ${Math.round(pkIdade() / 60000)} min` : 'sem dados do jogo'],
-        ['Drops em andamento', String(drops.length)],
-        ['Erro da Twitch', erroGql || 'nenhum'],
+        [tr('Login na Twitch'), P.token() ? tr('sim') : tr('não')],
+        [tr('Canais na lista'), tr('{t} ({v} ao vivo; fixos {f}, só chat {c})', { t: total, v: cfg.canais.filter((c) => aoVivo(c.login)).length, f: cfg.canais.filter((c) => modo(c) === 'fixo').length, c: cfg.canais.filter((c) => modo(c) === 'chat').length })],
+        [tr('Valendo'), `${vagasAtuais.length}/${vagasN()}`],
+        [tr('Chat'), cfg.presencaChat ? `${noChat.size}/${total}${ircPronto ? '' : ' (' + tr('desconectado') + ')'}${ircErro ? ' · ' + ircErro : ''}` : tr('desligado')],
+        [tr('Rodízio'), cfg.rodizio ? `${cfg.rodizioMin} min` : tr('desligado')],
+        [tr('Baú / Drops automáticos'), (cfg.bauAuto ? tr('sim') : tr('não')) + ' / ' + (cfg.dropsAuto ? tr('sim') : tr('não'))],
+        [tr('Lives em 160p'), cfg.qualidadeBaixa ? tr('sim') : tr('não')],
+        ['PokeIdle', pk ? (pk.vinculado ? tr('vinculado') : tr('não vinculado')) + ' · ' + tr('{n} canais com bônus · dados de {m} min', { n: pkComBonus().length, m: Math.round(pkIdade() / 60000) }) : tr('sem dados do jogo')],
+        [tr('Drops em andamento'), String(drops.length)],
+        [tr('Erro da Twitch'), erroGql || tr('nenhum')],
       ];
     }
 
@@ -212,7 +218,7 @@
       const v = pk && Number(pk.pct) || 0;
       if (!v) return '';
       const p = v <= 1 ? v * 100 : v;
-      return '+' + (Math.round(p * 10) / 10).toLocaleString('pt-BR') + '%';
+      return '+' + (Math.round(p * 10) / 10).toLocaleString(P.local()) + '%';
     }
     function remover(login) {
       const c = cfg.canais.find((x) => x.login === login);
@@ -403,8 +409,8 @@
       els.palco.style.gridTemplateColumns = `repeat(${col}, 1fr)`;
       els.vazio.style.display = visiveis ? 'none' : '';
       els.vazioTxt.textContent = iframes.size && !visiveis
-        ? 'As lives valendo estão tocando escondidas. Clique no olho de um canal para ver.'
-        : 'Adicione canais na lista. As lives que estiverem valendo aparecem aqui.';
+        ? tr('As lives valendo estão tocando escondidas. Clique no olho de um canal para ver.')
+        : tr('Adicione canais na lista. As lives que estiverem valendo aparecem aqui.');
     }
 
     // ----- presença no chat (IRC do próprio site) -----
@@ -414,7 +420,7 @@
     function conectarIRC() {
       if (!cfg.presencaChat || irc) return;
       const tok = P.token(), eu = P.meuLogin();
-      if (!tok || !eu) { ircErro = 'sem login'; return; }
+      if (!tok || !eu) { ircErro = tr('sem login'); return; }
       irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
       irc.onopen = () => { irc.send('CAP REQ :twitch.tv/membership'); irc.send('PASS oauth:' + tok); irc.send('NICK ' + eu); };
       irc.onmessage = (e) => {
@@ -424,7 +430,7 @@
           if (linha.startsWith('PING')) { irc.send('PONG' + linha.slice(4)); continue; }
           const sem = linha.replace(/^@\S+ /, '');
           if (/^:tmi\.twitch\.tv 001 /.test(sem)) { ircPronto = true; ircTent = 0; ircErro = ''; sincronizarChat(); continue; }
-          if (/NOTICE \* :Login (authentication failed|unsuccessful)/i.test(sem)) { ircErro = 'login do chat recusado'; continue; }
+          if (/NOTICE \* :Login (authentication failed|unsuccessful)/i.test(sem)) { ircErro = tr('login do chat recusado'); continue; }
           let m = sem.match(/^:(\w+)!\S+ JOIN #(\w+)/);
           if (m && m[1] === eu) { noChat.add(m[2]); pedidos.delete(m[2]); renderLeve(); continue; }
           m = sem.match(/^:(\w+)!\S+ PART #(\w+)/);
@@ -476,22 +482,22 @@
       const pkVivos = pkComBonus().filter((l) => info[l] && info[l].aoVivo);
       const pkVe = pk ? pkVivos.filter((l) => (pk.assistindoEm || []).includes(l)).length : 0;
       repor(els.chips,
-        chip(`${vivos}/${total} ao vivo`, '', 'Canais da sua lista que estão ao vivo agora / total de canais na lista'),
-        chip(`no chat ${noChat.size}/${total}`, cfg.presencaChat ? (ircPronto ? 'ok' : 'alerta') : 'off',
-          cfg.presencaChat ? (ircErro || 'Em quantos canais da lista você está dentro do chat (aparece na lista de quem está no chat; é isso que o PokeIdle confere)') : 'Presença no chat desligada'),
-        chip(`valendo ${vagasAtuais.length}/${vagasN()}`, vagasN() > 2 ? 'alerta' : 'ok', 'Lives tocando de verdade agora / vagas. Só essas ganham pontos e baú'),
-        gira ? (els.relogio = chip('troca em ' + mmss(rodada.inicio + cfg.rodizioMin * 60000 - Date.now()), 'relogio', 'Tempo até o rodízio trocar as lives que estão valendo')) : (els.relogio = null),
-        chip(`+${fmt(ganho)} pts · ${nBaus} baús`, 'ok', 'Pontos ganhos e baús pegos desde que a sala abriu'),
-        pk && pk.vinculado && pkVivos.length ? chip(`PokeIdle${pkPct() ? ' ' + pkPct() : ''} · te vê ${pkVe}/${pkVivos.length}`, pkVe ? 'ok' : 'alerta',
-          'Em quantos canais oficiais ao vivo o PokeIdle já te reconheceu / canais oficiais com bônus ao vivo. O jogo confere de tempos em tempos') : null,
-        erroGql ? chip('Twitch: ' + erroGql, 'alerta', 'A consulta de dados à Twitch falhou; a sala tenta de novo a cada minuto') : null);
+        chip(tr('{v}/{t} ao vivo', { v: vivos, t: total }), '', tr('Canais da sua lista que estão ao vivo agora / total de canais na lista')),
+        chip(tr('no chat {n}/{t}', { n: noChat.size, t: total }), cfg.presencaChat ? (ircPronto ? 'ok' : 'alerta') : 'off',
+          cfg.presencaChat ? (ircErro || tr('Em quantos canais da lista você está dentro do chat (aparece na lista de quem está no chat; é isso que o PokeIdle confere)')) : tr('Presença no chat desligada')),
+        chip(tr('valendo {n}/{t}', { n: vagasAtuais.length, t: vagasN() }), vagasN() > 2 ? 'alerta' : 'ok', tr('Lives tocando de verdade agora / vagas. Só essas ganham pontos e baú')),
+        gira ? (els.relogio = chip(tempoRodada(), 'relogio', tr('Tempo até o rodízio trocar as lives que estão valendo'))) : (els.relogio = null),
+        chip(tr('+{p} pts · {b} baús', { p: fmt(ganho), b: nBaus }), 'ok', tr('Pontos ganhos e baús pegos desde que a sala abriu')),
+        pk && pk.vinculado && pkVivos.length ? chip(`PokeIdle${pkPct() ? ' ' + pkPct() : ''} · ` + tr('te vê {a}/{b}', { a: pkVe, b: pkVivos.length }), pkVe ? 'ok' : 'alerta',
+          tr('Em quantos canais oficiais ao vivo o PokeIdle já te reconheceu / canais oficiais com bônus ao vivo. O jogo confere de tempos em tempos')) : null,
+        erroGql ? chip('Twitch: ' + erroGql, 'alerta', tr('A consulta de dados à Twitch falhou; a sala tenta de novo a cada minuto')) : null);
       renderPokeidle();
     }
-    function tempoRodada() { return 'troca em ' + mmss(rodada.inicio + cfg.rodizioMin * 60000 - Date.now()); }
+    function tempoRodada() { return tr('troca em {t}', { t: mmss(rodada.inicio + cfg.rodizioMin * 60000 - Date.now()) }); }
     function renderLista() {
       els.tempoSecao = null;
       if (!cfg.canais.length) {
-        repor(els.lista, h('p', { class: 'nota', style: 'padding:0 8px' }, 'Nenhum canal ainda. Digite um canal acima ou use os atalhos.'));
+        repor(els.lista, h('p', { class: 'nota', style: 'padding:0 8px' }, tr('Nenhum canal ainda. Digite um canal acima ou use os atalhos.')));
         return;
       }
       const tocandoL = cfg.canais.filter((c) => vagasAtuais.includes(c.login));
@@ -501,11 +507,11 @@
       const gira = cfg.rodizio && vagasN() - fixosVivos().length > 0 && fila.length > vagasN() - fixosVivos().length;
       const secao = (rot, n, extra) => h('div', { class: 'secao' }, h('span', {}, rot, h('span', { class: 'n' }, String(n))), extra || null);
       repor(els.lista,
-        tocandoL.length ? secao('Valendo agora', tocandoL.length, gira ? (els.tempoSecao = h('span', { class: 'tempo', title: 'Tempo até o rodízio trocar as lives que estão valendo' }, tempoRodada())) : null) : null,
+        tocandoL.length ? secao(tr('Valendo agora'), tocandoL.length, gira ? (els.tempoSecao = h('span', { class: 'tempo', title: tr('Tempo até o rodízio trocar as lives que estão valendo') }, tempoRodada())) : null) : null,
         ...tocandoL.map(cardCanal),
-        vivosL.length ? secao('Ao vivo, esperando', vivosL.length) : null,
+        vivosL.length ? secao(tr('Ao vivo, esperando'), vivosL.length) : null,
         ...vivosL.map(cardCanal),
-        offL.length ? secao('Offline', offL.length) : null,
+        offL.length ? secao(tr('Offline'), offL.length) : null,
         ...offL.map(cardCanal));
     }
     function cardCanal(c) {
@@ -514,64 +520,64 @@
       const tocando = vagasAtuais.includes(c.login);
       const ganho = i.saldo !== null && i.saldo !== undefined && i.saldoInicial !== null && i.saldoInicial !== undefined ? i.saldo - i.saldoInicial : 0;
       const nB = Math.max(0, (baus[c.login] || 0) - (bausInicio[c.login] || 0));
-      const status = i.inexistente ? 'canal não existe' : i.aoVivo === undefined ? 'carregando…' :
-        i.aoVivo ? `${i.jogo || 'ao vivo'} · ${fmt(i.espectadores)} assistindo` : 'offline';
+      const status = i.inexistente ? tr('canal não existe') : i.aoVivo === undefined ? tr('carregando…') :
+        i.aoVivo ? (i.jogo || tr('ao vivo')) + ' · ' + tr('{n} assistindo', { n: fmt(i.espectadores) }) : tr('offline');
       const ehPk = pkComBonus().includes(c.login);
       return h('div', { class: 'card' + (tocando ? ' tocando' : '') + (i.aoVivo ? ' vivo' : '') },
         i.img ? h('img', { src: i.img, alt: '' }) : h('div', { class: 'ph' }),
         h('div', { class: 'meio' },
           h('div', { class: 'nome' }, i.nome || c.login,
-            tocando ? h('span', { class: 'tag t1', title: 'Tocando agora: ganha pontos e baú' }, ic('play', 9), 'valendo')
-              : i.aoVivo ? h('span', { class: 'tag', title: modo(c) === 'chat' ? 'Só presença no chat' : modo(c) === 'fixo' ? 'Fixo, esperando vaga' : 'Esperando a vez no rodízio' }, modo(c) === 'chat' ? 'só chat' : 'na fila') : null),
+            tocando ? h('span', { class: 'tag t1', title: tr('Tocando agora: ganha pontos e baú') }, ic('play', 9), tr('valendo'))
+              : i.aoVivo ? h('span', { class: 'tag', title: modo(c) === 'chat' ? tr('Só presença no chat') : modo(c) === 'fixo' ? tr('Fixo, esperando vaga') : tr('Esperando a vez no rodízio') }, modo(c) === 'chat' ? tr('só chat') : tr('na fila')) : null),
           h('div', { class: 'st' }, status),
-          h('div', { class: 'st' }, i.saldo === null ? 'sem pontos de canal' : `${fmt(i.saldo)} pts`,
+          h('div', { class: 'st' }, i.saldo === null ? tr('sem pontos de canal') : tr('{n} pts', { n: fmt(i.saldo) }),
             ganho > 0 ? h('b', { class: 'ganho' }, ` +${fmt(ganho)}`) : null,
-            nB ? ` · ${nB} baú${nB > 1 ? 's' : ''}` : null),
+            nB ? ' · ' + (nB > 1 ? tr('{n} baús', { n: nB }) : tr('{n} baú', { n: nB })) : null),
           h('div', { class: 'tags' },
-            noChat.has(c.login) ? h('span', { class: 'tag t2', title: 'Você está no chat deste canal' }, 'chat ✓') : null,
-            ehPk ? h('span', { class: 'tag t3', title: 'Canal oficial do PokeIdle com bônus (lido do jogo)' }, 'PokeIdle') : null,
+            noChat.has(c.login) ? h('span', { class: 'tag t2', title: tr('Você está no chat deste canal') }, tr('chat ✓')) : null,
+            ehPk ? h('span', { class: 'tag t3', title: tr('Canal oficial do PokeIdle com bônus (lido do jogo)') }, 'PokeIdle') : null,
             ehPk && pk && i.aoVivo ? ((pk.assistindoEm || []).includes(c.login)
-              ? h('span', { class: 'tag t2', title: 'O PokeIdle já te reconheceu neste canal' }, 'jogo te vê ✓')
-              : h('span', { class: 'tag', title: 'O PokeIdle ainda não te reconheceu aqui. Ele confere de tempos em tempos; com o chat ✓ deve aparecer em alguns minutos' }, 'jogo ainda não viu')) : null)),
+              ? h('span', { class: 'tag t2', title: tr('O PokeIdle já te reconheceu neste canal') }, tr('jogo te vê ✓'))
+              : h('span', { class: 'tag', title: tr('O PokeIdle ainda não te reconheceu aqui. Ele confere de tempos em tempos; com o chat ✓ deve aparecer em alguns minutos') }, tr('jogo ainda não viu'))) : null)),
         h('div', { class: 'lado' },
           h('div', { class: 'bts' },
             i.aoVivo && !tocando && modo(c) !== 'chat'
-              ? h('button', { class: 'ic agora', title: 'Ver agora: esta live entra numa vaga já e o rodízio continua dela', 'aria-label': 'Ver agora', onclick: () => verAgora(c.login) }, ic('play', 14)) : null,
-            h('button', { class: 'ic' + (c.mostrar ? ' on' : ''), title: c.mostrar ? 'Vídeo aparece na sala (clique para esconder; continua contando)' : 'Vídeo toca escondido (clique para mostrar)', 'aria-label': c.mostrar ? 'Esconder vídeo' : 'Mostrar vídeo', onclick: () => alternar(c.login, 'mostrar') }, ic(c.mostrar ? 'olho' : 'olhoFechado')),
-            h('button', { class: 'ic x', title: 'Tirar da lista', 'aria-label': 'Tirar da lista', onclick: () => remover(c.login) }, ic('x', 14))),
+              ? h('button', { class: 'ic agora', title: tr('Ver agora: esta live entra numa vaga já e o rodízio continua dela'), 'aria-label': tr('Ver agora'), onclick: () => verAgora(c.login) }, ic('play', 14)) : null,
+            h('button', { class: 'ic' + (c.mostrar ? ' on' : ''), title: c.mostrar ? tr('Vídeo aparece na sala (clique para esconder; continua contando)') : tr('Vídeo toca escondido (clique para mostrar)'), 'aria-label': c.mostrar ? tr('Esconder vídeo') : tr('Mostrar vídeo'), onclick: () => alternar(c.login, 'mostrar') }, ic(c.mostrar ? 'olho' : 'olhoFechado')),
+            h('button', { class: 'ic x', title: tr('Tirar da lista'), 'aria-label': tr('Tirar da lista'), onclick: () => remover(c.login) }, ic('x', 14))),
           h('div', { class: 'modos' },
-            ...[['fixo', 'Fixo', 'Sempre tem vaga quando está ao vivo (fora do rodízio)'],
-              ['rodizio', 'Rodízio', 'Entra na fila e reveza as vagas com os outros'],
-              ['chat', 'Só chat', 'Nunca toca vídeo: fica só presente no chat']]
+            ...[['fixo', tr('Fixo'), tr('Sempre tem vaga quando está ao vivo (fora do rodízio)')],
+              ['rodizio', tr('Rodízio'), tr('Entra na fila e reveza as vagas com os outros')],
+              ['chat', tr('Só chat'), tr('Nunca toca vídeo: fica só presente no chat')]]
               .map(([m, rot, dica]) => h('button', { class: 'modo' + (modo(c) === m ? ' on' : ''), title: dica, onclick: () => definirModo(c.login, m) }, rot)))));
     }
     function renderDrops() {
       const linhas = drops.map((d) => {
         const pct = d.req ? Math.min(100, Math.round((d.min / d.req) * 100)) : 0;
         return h('div', { class: 'drop' },
-          h('div', { class: 'st' }, h('b', {}, d.nome), ` · ${d.min}/${d.req} min`, d.ok ? null : ' · conecte a conta do jogo'),
+          h('div', { class: 'st' }, h('b', {}, d.nome), ` · ${d.min}/${d.req} min`, d.ok ? null : ' · ' + tr('conecte a conta do jogo')),
           h('div', { class: 'barra' }, h('i', { style: `width:${pct}%` })));
       });
       const hoje = dropsResgatados.filter((d) => d.em > inicioSessao).length;
       repor(els.drops, 
-        h('div', { class: 'tit' }, P.ui.icone('presente', 15), 'Drops', hoje ? h('span', { class: 'tag t2' }, `${hoje} resgatado${hoje > 1 ? 's' : ''}`) : null),
-        ...(linhas.length ? linhas : [h('p', { class: 'nota' }, cfg.dropsAuto ? 'Nenhum Drop em andamento. Assista um canal com "Drops ativados" para começar.' : 'Resgate automático desligado.')]));
+        h('div', { class: 'tit' }, P.ui.icone('presente', 15), tr('Drops'), hoje ? h('span', { class: 'tag t2' }, hoje > 1 ? tr('{n} resgatados', { n: hoje }) : tr('{n} resgatado', { n: hoje })) : null),
+        ...(linhas.length ? linhas : [h('p', { class: 'nota' }, cfg.dropsAuto ? tr('Nenhum Drop em andamento. Assista um canal com "Drops ativados" para começar.') : tr('Resgate automático desligado.'))]));
     }
     function renderBarra() {
       if (!els.barra) return;
       const conf = Date.now() - confirmarLimpar < 4000;
       repor(els.barra,
-        h('button', { class: 'mini', title: pk ? 'Tira tudo e deixa só os canais oficiais com bônus do PokeIdle' : 'A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5)', disabled: !pk, onclick: () => limparTudo(true) }, 'Só canais do PokeIdle'),
-        h('button', { class: 'mini' + (conf ? ' perigo' : ''), title: 'Tira todos os canais da lista e desliga o "Seguir canais do PokeIdle"', onclick: () => limparTudo(false) }, conf ? 'Clique de novo para limpar' : 'Limpar lista'));
+        h('button', { class: 'mini', title: pk ? tr('Tira tudo e deixa só os canais oficiais com bônus do PokeIdle') : tr('A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5)'), disabled: !pk, onclick: () => limparTudo(true) }, tr('Só canais do PokeIdle')),
+        h('button', { class: 'mini' + (conf ? ' perigo' : ''), title: tr('Tira todos os canais da lista e desliga o "Seguir canais do PokeIdle"'), onclick: () => limparTudo(false) }, conf ? tr('Clique de novo para limpar') : tr('Limpar lista')));
     }
     let aba = 'canais';
     function renderAbas() {
       if (!els.abas) return;
       const aba1 = (id, rot, extra) => h('button', { class: 'aba' + (aba === id ? ' on' : ''), onclick: () => { aba = id; renderAbas(); } }, rot, extra || null);
       repor(els.abas,
-        aba1('canais', 'Canais', cfg.canais.length ? h('span', { class: 'cont' }, String(cfg.canais.length)) : null),
+        aba1('canais', tr('Canais'), cfg.canais.length ? h('span', { class: 'cont' }, String(cfg.canais.length)) : null),
         aba1('pokeidle', 'PokeIdle'),
-        aba1('ajustes', 'Ajustes'));
+        aba1('ajustes', tr('Ajustes')));
       els.abaCanais.style.display = aba === 'canais' ? '' : 'none';
       els.abaPk.style.display = aba === 'pokeidle' ? '' : 'none';
       els.abaAj.style.display = aba === 'ajustes' ? '' : 'none';
@@ -583,11 +589,11 @@
       if (els.btPk) {
         els.btPk.disabled = !pk;
         els.btPk.title = pk
-          ? 'Põe na lista os canais oficiais com bônus do PokeIdle (sem tirar os seus)'
-          : 'A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5) depois de atualizar a extensão';
+          ? tr('Põe na lista os canais oficiais com bônus do PokeIdle (sem tirar os seus)')
+          : tr('A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5) depois de atualizar a extensão');
       }
       if (!pk) {
-        repor(els.pk, h('p', { class: 'nota' }, 'PokeIdle: ainda sem dados do jogo. Se ele já está aberto, recarregue a aba do PokeIdle (F5) uma vez para a Plateia começar a ler os canais com bônus.'));
+        repor(els.pk, h('p', { class: 'nota' }, tr('PokeIdle: ainda sem dados do jogo. Se ele já está aberto, recarregue a aba do PokeIdle (F5) uma vez para a Plateia começar a ler os canais com bônus.')));
         return;
       }
       const eu = P.meuLogin();
@@ -595,17 +601,17 @@
       const min = Math.round(pkIdade() / 60000);
       repor(els.pk,
         h('div', { class: 'st' }, h('b', {}, 'PokeIdle'),
-          ` · ${pkComBonus().length} canais com bônus, ${vivos.length} ao vivo`,
-          pkPct() ? ` · seu bônus ${pkPct()}` : null,
-          min > 10 ? ` · dados de ${min} min atrás (abra o jogo)` : null),
-        !pk.vinculado ? h('p', { class: 'aviso' }, 'Sua conta do PokeIdle não está vinculada à Twitch. Vincule no jogo (Bônus Twitch) para o bônus contar.') : null,
-        pk.vinculado && eu && pk.login && pk.login !== eu ? h('p', { class: 'aviso' }, `O PokeIdle está vinculado a "${pk.login}", mas a Twitch aberta aqui é "${eu}". O bônus só conta na conta vinculada.`) : null,
-        !cfg.seguirPokeidle ? h('p', { class: 'nota' }, 'Seguir canais do PokeIdle está desligado nos ajustes.') : null,
+          ' · ' + tr('{n} canais com bônus, {v} ao vivo', { n: pkComBonus().length, v: vivos.length }),
+          pkPct() ? ' · ' + tr('seu bônus {p}', { p: pkPct() }) : null,
+          min > 10 ? ' · ' + tr('dados de {m} min atrás (abra o jogo)', { m: min }) : null),
+        !pk.vinculado ? h('p', { class: 'aviso' }, tr('Sua conta do PokeIdle não está vinculada à Twitch. Vincule no jogo (Bônus Twitch) para o bônus contar.')) : null,
+        pk.vinculado && eu && pk.login && pk.login !== eu ? h('p', { class: 'aviso' }, tr('O PokeIdle está vinculado a "{a}", mas a Twitch aberta aqui é "{b}". O bônus só conta na conta vinculada.', { a: pk.login, b: eu })) : null,
+        !cfg.seguirPokeidle ? h('p', { class: 'nota' }, tr('Seguir canais do PokeIdle está desligado nos ajustes.')) : null,
         pkk ? (() => {
           const ativos = Object.values(pkk.bonus || {}).map(Number).filter((ate) => ate > Date.now());
           return h('div', { class: 'st' }, h('b', { class: 'kk' }, 'Kick'),
-            !pkk.vinculado ? ' · não vinculada no jogo (o resgate fica parado)'
-              : ativos.length ? ` · ${ativos.length} bônus ativo${ativos.length > 1 ? 's' : ''}, até ${P.ui.hhmm(Math.max(...ativos))}` : ' · nenhum bônus ativo');
+            !pkk.vinculado ? ' · ' + tr('não vinculada no jogo (o resgate fica parado)')
+              : ativos.length ? ' · ' + tr(ativos.length > 1 ? tr('{n} bônus ativos, até {h}') : tr('{n} bônus ativo, até {h}'), { n: ativos.length, h: P.ui.hhmm(Math.max(...ativos)) }) : ' · ' + tr('nenhum bônus ativo'));
         })() : null);
     }
     function renderAjustes() {
@@ -614,18 +620,18 @@
       const num = (campo, min, max) => h('input', { type: 'number', min, max, value: cfg[campo], onchange: (e) => { cfg[campo] = Math.max(min, Math.min(max, parseInt(e.target.value, 10) || min)); salvar(); aplicarVagas(); render(); } });
       const grupo = (tit, ...itens) => h('div', { class: 'grupo' }, h('div', { class: 'grupo-tit' }, tit), ...itens);
       repor(els.abaAj,
-        grupo('Lives tocando',
-          linha('Vagas', num('vagas', 1, MAX_VAGAS), 'Quantas lives tocam o vídeo de verdade. Só elas ganham pontos e baú. A Twitch só paga em 2.'),
-          vagasN() > 2 ? h('p', { class: 'aviso' }, 'Com mais de 2 lives tocando, as extras não ganham pontos e você pode deixar de contar como espectador em todas.') : null,
-          linha('Rodízio entre os canais', chk('rodizio'), 'Troca quais lives estão valendo, para todos os canais ao vivo ganharem pontos e baú em algum momento. Desligado: ficam sempre as mesmas.'),
-          linha('Minutos por rodada', num('rodizioMin', 10, 120), 'Tempo que cada par fica valendo antes de passar a vez. Mínimo 10 (pontos a cada 5 min, baú a cada ~15).'),
-          linha('Lives da sala em 160p', chk('qualidadeBaixa'), 'Lives da sala na menor qualidade: menos internet e PC. Sua Twitch normal não muda.')),
-        grupo('Presença e PokeIdle',
-          linha('Presença no chat de todos', chk('presencaChat'), 'Entra no chat de todos os canais da lista, sem vídeo. É o que o PokeIdle usa para o bônus.'),
-          linha('Seguir canais do PokeIdle', chk('seguirPokeidle'), 'Põe e tira da lista, sozinho, os canais oficiais com bônus que o jogo mostra (precisa do jogo aberto numa aba).')),
-        grupo('Automático',
-          linha('Baú automático', chk('bauAuto'), 'Clica no baú de +50 pontos assim que aparece, na sala e em qualquer aba da Twitch.'),
-          linha('Drops automáticos', chk('dropsAuto'), 'Resgata o Drop quando chega a 100%.')));
+        grupo(tr('Lives tocando'),
+          linha(tr('Vagas'), num('vagas', 1, MAX_VAGAS), tr('Quantas lives tocam o vídeo de verdade. Só elas ganham pontos e baú. A Twitch só paga em 2.')),
+          vagasN() > 2 ? h('p', { class: 'aviso' }, tr('Com mais de 2 lives tocando, as extras não ganham pontos e você pode deixar de contar como espectador em todas.')) : null,
+          linha(tr('Rodízio entre os canais'), chk('rodizio'), tr('Troca quais lives estão valendo, para todos os canais ao vivo ganharem pontos e baú em algum momento. Desligado: ficam sempre as mesmas.')),
+          linha(tr('Minutos por rodada'), num('rodizioMin', 10, 120), tr('Tempo que cada par fica valendo antes de passar a vez. Mínimo 10 (pontos a cada 5 min, baú a cada ~15).')),
+          linha(tr('Lives da sala em 160p'), chk('qualidadeBaixa'), tr('Lives da sala na menor qualidade: menos internet e PC. Sua Twitch normal não muda.'))),
+        grupo(tr('Presença e PokeIdle'),
+          linha(tr('Presença no chat de todos'), chk('presencaChat'), tr('Entra no chat de todos os canais da lista, sem vídeo. É o que o PokeIdle usa para o bônus.')),
+          linha(tr('Seguir canais do PokeIdle'), chk('seguirPokeidle'), tr('Põe e tira da lista, sozinho, os canais oficiais com bônus que o jogo mostra (precisa do jogo aberto numa aba).'))),
+        grupo(tr('Automático'),
+          linha(tr('Baú automático'), chk('bauAuto'), tr('Clica no baú de +50 pontos assim que aparece, na sala e em qualquer aba da Twitch.')),
+          linha(tr('Drops automáticos'), chk('dropsAuto'), tr('Resgata o Drop quando chega a 100%.'))));
     }
     function renderLeve() { renderChips(); renderLista(); }
     function render() { renderAbas(); renderChips(); renderBarra(); renderLista(); renderDrops(); renderAjustes(); }
@@ -654,7 +660,7 @@
     window.addEventListener('beforeunload', restaurarQualidade);
 
     if (!P.token()) {
-      repor(els.chips, chip('Entre na sua conta da Twitch para usar a sala', 'alerta'));
+      repor(els.chips, chip(tr('Entre na sua conta da Twitch para usar a sala'), 'alerta'));
     }
     sincronizarPokeidle();
     render();

@@ -28,7 +28,7 @@ function chromeFalso(store, ouvintes) {
 
 (async () => {
   // ---------- 1) ponte + guarda no pokeidle.io ----------
-  const store = {}, ouvintes = [];
+  const store = { idioma: 'pt' }, ouvintes = [];
   const pkdom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://pokeidle.io/app', runScripts: 'outside-only' });
   const pw = pkdom.window;
   class WSFalso extends pw.EventTarget { constructor(url) { super(); this.url = url; pw.__ws = this; } send() {} close() {} }
@@ -37,7 +37,7 @@ function chromeFalso(store, ouvintes) {
   pw.postMessage = (data, origem) => setTimeout(() => pw.dispatchEvent(new pw.MessageEvent('message', { data, origin: origem, source: pw })), 0);
   pw.chrome = chromeFalso(store, ouvintes);
   pw.eval(ler('src/pokeidle-ponte.js'));
-  pw.eval(ler('src/comum.js'));
+  pw.eval(ler('src/comum.js')); pw.eval(ler('src/i18n/en.js')); pw.eval(ler('src/i18n/es.js'));
   pw.eval(ler('src/pokeidle-guarda.js'));
   const ws = new pw.WebSocket('wss://pokeidle.io/ws');
   ok('ponte: WebSocket continua sendo instância do original', ws instanceof WSFalso);
@@ -78,7 +78,7 @@ function chromeFalso(store, ouvintes) {
   };
   w.WebSocket = class { constructor() { setTimeout(() => this.onopen && this.onopen(), 1); } send() {} close() {} };
   w.HTMLIFrameElement.prototype.__ok = 1;
-  w.eval(ler('src/comum.js'));
+  w.eval(ler('src/comum.js')); w.eval(ler('src/i18n/en.js')); w.eval(ler('src/i18n/es.js'));
   w.eval(ler('src/ui.js'));
   w.eval(ler('src/pokeidle-painel.js'));
   w.eval(ler('src/sala.js'));

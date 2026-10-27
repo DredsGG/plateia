@@ -10,8 +10,8 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.7.0-9146FF)
-![Tests](https://img.shields.io/badge/tests-90%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.8.0-9146FF)
+![Tests](https://img.shields.io/badge/tests-147%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+
@@ -71,6 +71,7 @@ Kick has no chest to click: points drop by themselves (10 every 5 minutes watche
 - The first time a room opens, a short tutorial (5 steps per room) explains each part, with **Pular** (skip) and **Entendi** (got it). It doesn't come back by itself, but **? Como usar** at the top reopens it.
 - After an update, the first time a room opens shows **Novidades da vX.Y.Z** (what's new) once per version. The texts live in `extension/src/changelog/` (Portuguese and English) and are updated on every version.
 - Both close with the X or Esc and never pause anything that's running.
+- **On any Twitch or Kick page, not only inside the rooms** (since v0.8.0): the tutorial on a fresh install, *What's new in vX.Y.Z* once per version, and *New version vX.Y.Z* with a short summary and an **Update** button show up by themselves as a small box in the middle of the screen, with no dark overlay and without blocking clicks on the site.
 
 ## How it was measured
 
@@ -157,8 +158,9 @@ Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purp
 
 ## Languages
 
-- The rooms, the tutorial and the what's-new box are in **Portuguese**, the language I use (the changelog also has an English version in `extension/src/changelog/en.js`).
-- The install and update guide (`COMO-INSTALAR.html`) is in **Portuguese and English**, with flag buttons to switch.
+- Since v0.8.0 everything (rooms, tutorial, what's new, update notices, footer) is in **Portuguese, English and Spanish**. The first run follows the browser language (pt-*, es-*, en-*; anything else falls back to English) and a **PT · EN · ES** selector in the room footer switches it on the spot.
+- Plateia keeps its own dictionary (`extension/src/i18n/en.js`, `es.js`) keyed by the Portuguese text, because `chrome.i18n` can't switch language while the extension is running. The changelog has the three languages in `extension/src/changelog/`.
+- The install and update guide (`COMO-INSTALAR.html`) has flag buttons to switch language.
 
 ## Known limitations
 
@@ -179,9 +181,12 @@ node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
 node teste-rodape.cjs       # footer: update check, bug report without personal data, signature: 10/10
 node teste-quadros.cjs      # first-run tutorial and what's new, both rooms: 13/13
+node teste-avisos.cjs       # tutorial / what's new / new version on the site page, never blocking clicks: 22/22
+node teste-idiomas.cjs      # every text in en and es, language detection, both rooms in pt/en/es: 35/35
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10
+node e2e-regra14.mjs /path/to/copy-of-extension /path/to/screenshots pt-BR   # notices on the page and the language selector, per browser language (pt-BR, en-US, es, fr)
 
 # Firefox: Mozilla's linter, self-distribution rules (0 errors)
 npx web-ext lint --source-dir ../extension --self-hosted

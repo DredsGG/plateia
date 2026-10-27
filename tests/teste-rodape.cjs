@@ -8,14 +8,14 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https
 const w = dom.window;
 w.document.cookie = 'auth-token=SEGREDO123abc; path=/';
 w.document.cookie = 'login=usuario_teste; path=/';
-const store = { config: { canais: [{ login: 'canalsecreto', mostrar: true, modo: 'rodizio' }], v020: true } };
+const store = { idioma: 'pt', config: { canais: [{ login: 'canalsecreto', mostrar: true, modo: 'rodizio' }], v020: true } };
 w.chrome = { runtime: { getManifest: () => manifest, sendMessage: (m, cb) => cb && cb(null), lastError: null }, storage: { local: {
   get: async (k) => ({ [k]: store[k] }), set: async (o) => Object.assign(store, o) }, onChanged: { addListener() {} } } };
 w.fetch = async () => ({ ok: true, json: async () => ({ data: {} }) });
 w.WebSocket = class { constructor() {} send() {} close() {} };
 let aberto = null;
 w.open = (u) => { aberto = u; return {}; };
-for (const f of ['src/comum.js', 'src/ui.js', 'src/pokeidle-painel.js', 'src/sala.js']) w.eval(fs.readFileSync(path.join(raiz, f), 'utf8'));
+for (const f of JSON.parse(require('fs').readFileSync(require('path').join(raiz, 'manifest.json'), 'utf8')).content_scripts[0].js) w.eval(fs.readFileSync(path.join(raiz, f), 'utf8'));
 setTimeout(() => {
   const sr = w.document.getElementById('plateia-sala').shadowRoot;
   const proc = [...sr.querySelectorAll('.upd-proc')].find((b) => /Procurar atualização/.test(b.textContent));

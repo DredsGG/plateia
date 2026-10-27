@@ -5,6 +5,7 @@
   P.kickIniciado = true;
   const { h, repor, fmt, mmss, logo, assinatura, duracao, hhmm } = P.ui;
 
+  const tr = (txt, vars) => P.t(txt, vars);
   const NOME_JANELA = 'plateia-kick';
   const X_CLIENT_TOKEN = 'e1393935a959b4020a4491574f6490129f678acdaa92760471263db43487f823'; // constante pública do site da Kick
   const MAX_VAGAS = 4;
@@ -33,7 +34,7 @@
   const sessao = () => P.cookie('session_token');
   async function api(url, opts = {}) {
     const tok = sessao();
-    if (!tok) throw new Error('sem login');
+    if (!tok) throw new Error(tr('sem login'));
     const cab = { Accept: 'application/json', Authorization: 'Bearer ' + tok };
     if (url.startsWith('https://web.kick.com') || url.includes('/redeem')) cab['X-Client-Token'] = X_CLIENT_TOKEN;
     const xsrf = P.cookie('XSRF-TOKEN');
@@ -64,10 +65,12 @@
         background:#53fc18;color:#0b0b0c;border:0;border-radius:999px;padding:6px 14px 6px 6px;font:700 13px/1 Inter,Arial,sans-serif;
         box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;opacity:.94}
       button:hover{opacity:1;filter:brightness(1.08)}` + P.ui.CSS_BOLINHA));
-    const bt = h('button', { title: 'Abrir a sala de multi-live da Plateia (Kick)', onclick: abrirSala }, logo(22), 'Plateia');
+    const bt = h('button', { title: tr('Abrir a sala de multi-live da Plateia (Kick)'), onclick: abrirSala }, logo(22), 'Plateia');
     raiz.appendChild(bt);
     P.ui.marcarNovidade(bt);
     document.documentElement.appendChild(host);
+    // regra 14: tutorial, novidades e versão nova aparecem sozinhos aqui, sem abrir a sala
+    P.ui.avisosSite({ sala: 'kick', abrirSala });
   }
 
   let salaAtiva = false;
@@ -77,16 +80,19 @@
     else botaoAbrir();
   }
   window.addEventListener('hashchange', talvez);
-  talvez();
+  P.idiomaPronto.then(talvez);
 
   // ---------- sala ----------
   async function iniciarSala() {
     salaAtiva = true;
+    await P.idiomaPronto;
     const ehJanela = !!window.opener || window.name === NOME_JANELA;
     window.name = NOME_JANELA;
     document.documentElement.dataset.plateia = 'sala-kick';
     const lanc = document.getElementById('plateia-lancador');
     if (lanc) lanc.remove();
+    const avisos = document.getElementById('plateia-avisos');
+    if (avisos) { if (P.avisos) P.avisos.parar(); avisos.remove(); }
 
     let cfg = await P.configKick();
     const salvar = () => P.gravar('configKick', cfg);
@@ -113,23 +119,23 @@
     const els = {};
     raiz.appendChild(h('div', { class: 'app' },
       h('header', {},
-        h('div', { class: 'marca' }, logo(24), h('b', {}, 'Plateia'), h('span', { class: 'sub' }, 'sala da Kick')),
+        h('div', { class: 'marca' }, logo(24), h('b', {}, 'Plateia'), h('span', { class: 'sub' }, tr('sala da Kick'))),
         els.chips = h('div', { class: 'chips' }),
         h('div', { class: 'acoes' },
           els.ajuda = h('span', { class: 'ajuda' }),
-          ehJanela ? null : h('button', { class: 'bt sec', onclick: abrirSala, title: 'Abre a sala numa janela só dela' }, ic('janela'), 'Abrir em janela própria'),
-          h('button', { class: 'bt fantasma', onclick: fecharSala, title: 'Fecha a sala (as lives param de contar)' }, ic('sair'), 'Fechar sala'))),
+          ehJanela ? null : h('button', { class: 'bt sec', onclick: abrirSala, title: tr('Abre a sala numa janela só dela') }, ic('janela'), tr('Abrir em janela própria')),
+          h('button', { class: 'bt fantasma', onclick: fecharSala, title: tr('Fecha a sala (as lives param de contar)') }, ic('sair'), tr('Fechar sala')))),
       h('div', { class: 'corpo' },
         h('aside', {},
           els.abas = h('div', { class: 'abas' }),
           els.conteudo = h('div', { class: 'conteudo' }),
           P.ui.atualizacao({ sala: 'Kick', diagnostico: () => diagnosticoSala() }),
-          assinatura()),
+          h('div', { class: 'rodape-fim' }, assinatura(), P.ui.seletorIdioma())),
         els.palco = h('main', { class: 'palco' },
-          els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, 'Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.'))))));
+          els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, tr('Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.')))))));
     document.documentElement.appendChild(host);
     if (document.body) document.body.style.overflow = 'hidden';
-    document.title = 'Plateia · sala da Kick';
+    document.title = tr('Plateia · sala da Kick');
     // tutorial (1ª vez) e novidades (depois de atualizar), regra 12
     const qd = P.ui.quadros({ app: raiz.querySelector('.app'), sala: 'kick' });
     els.ajuda.replaceWith(qd.botao);
@@ -141,16 +147,16 @@
       const dia = Date.now() - 24 * 3600e3;
       const r24 = resgates.filter((r) => r.em > dia);
       return [
-        ['Login na Kick', sessao() ? 'sim' : 'não'],
-        ['Canais na lista', `${cfg.canais.length} (${cfg.canais.filter((c) => aoVivo(c.slug)).length} ao vivo; fixos ${cfg.canais.filter((c) => modo(c) === 'fixo').length}, fora ${cfg.canais.filter((c) => modo(c) === 'fora').length})`],
-        ['Valendo', `${vagasAtuais.length}/${vagasN()}`],
-        ['Resgate automático', cfg.resgateAuto ? 'ligado' : 'desligado'],
-        ['PokeIdle (Kick)', pkk ? `${pkk.vinculado ? 'vinculado' : 'não vinculado'}${pkk.vinculado && pkk.login && eu ? (pkk.login.toLowerCase() === eu.toLowerCase() ? ' · mesma conta' : ' · OUTRA conta') : ''} · ${(pkk.oficiais || []).length} canais oficiais` : 'sem dados do jogo'],
-        ['Pacotes lidos', `${Object.values(pacotes).filter((p) => p.itens.length === 3).length} completos, ${Object.values(pacotes).filter((p) => p.erro).length} com erro`],
-        ['Resgates em 24 h', `${r24.filter((r) => r.ok).length} ok, ${r24.filter((r) => !r.ok).length} falharam${r24.find((r) => !r.ok) ? ' (último: ' + r24.find((r) => !r.ok).erro + ')' : ''}`],
-        ['Daily Reward', diaria ? (diaria.pega ? 'pega' : `${diaria.prog}/${diaria.meta} min`) : 'sem dados'],
-        ['Drops em andamento', String(drops.length)],
-        ['Erro da Kick', erro || 'nenhum'],
+        [tr('Login na Kick'), sessao() ? tr('sim') : tr('não')],
+        [tr('Canais na lista'), tr('{t} ({v} ao vivo; fixos {f}, fora {o})', { t: cfg.canais.length, v: cfg.canais.filter((c) => aoVivo(c.slug)).length, f: cfg.canais.filter((c) => modo(c) === 'fixo').length, o: cfg.canais.filter((c) => modo(c) === 'fora').length })],
+        [tr('Valendo'), `${vagasAtuais.length}/${vagasN()}`],
+        [tr('Resgate automático'), cfg.resgateAuto ? tr('ligado') : tr('desligado')],
+        [tr('PokeIdle (Kick)'), pkk ? (pkk.vinculado ? tr('vinculado') : tr('não vinculado')) + (pkk.vinculado && pkk.login && eu ? ' · ' + (pkk.login.toLowerCase() === eu.toLowerCase() ? tr('mesma conta') : tr('OUTRA conta')) : '') + ' · ' + tr('{n} canais oficiais', { n: (pkk.oficiais || []).length }) : tr('sem dados do jogo')],
+        [tr('Pacotes lidos'), tr('{a} completos, {b} com erro', { a: Object.values(pacotes).filter((p) => p.itens.length === 3).length, b: Object.values(pacotes).filter((p) => p.erro).length })],
+        [tr('Resgates em 24 h'), tr('{a} ok, {b} falharam', { a: r24.filter((r) => r.ok).length, b: r24.filter((r) => !r.ok).length }) + (r24.find((r) => !r.ok) ? ' (' + tr('último: {e}', { e: r24.find((r) => !r.ok).erro }) + ')' : '')],
+        [tr('Daily Reward'), diaria ? (diaria.pega ? tr('pega') : `${diaria.prog}/${diaria.meta} min`) : tr('sem dados')],
+        [tr('Drops em andamento'), String(drops.length)],
+        [tr('Erro da Kick'), erro || tr('nenhum')],
       ];
     }
 
@@ -189,7 +195,7 @@
           const slug = c.channel_slug || c.slug;
           if (slugValido(slug) && (c.is_live || (c.livestream && c.livestream.is_live))) adicionar(slug);
         }
-      } catch (e) { erro = 'seguidos: ' + e.message; render(); }
+      } catch (e) { erro = tr('seguidos: {e}', { e: e.message }); render(); }
     }
 
     // ----- PokeIdle na Kick -----
@@ -331,8 +337,8 @@
               try {
                 const r = await api(`https://web.kick.com/api/v1/gamification/challenges/${c.id}/claim`, { method: 'POST', body: {} });
                 const raridade = r && r.data && r.data.winner && r.data.winner.rarity;
-                await registrarEvento({ tipo: 'diaria', ok: true, texto: `${c.name || 'Recompensa'} pega${raridade ? ' (' + raridade + ')' : ''}` });
-              } catch (e) { await registrarEvento({ tipo: 'diaria', ok: false, texto: `${c.name || 'Recompensa'}: ${e.message}` }); }
+                await registrarEvento({ tipo: 'diaria', ok: true, texto: tr('{n} pega', { n: c.name || tr('Recompensa') }) + (raridade ? ' (' + raridade + ')' : '') });
+              } catch (e) { await registrarEvento({ tipo: 'diaria', ok: false, texto: `${c.name || tr('Recompensa')}: ${e.message}` }); }
             }
           }
         }
@@ -398,7 +404,7 @@
       }
       els.palco.style.gridTemplateColumns = `repeat(${Math.max(1, Math.ceil(Math.sqrt(visiveis)))}, 1fr)`;
       els.vazio.style.display = visiveis ? 'none' : '';
-      els.vazioTxt.textContent = iframes.size && !visiveis ? 'As lives valendo estão tocando escondidas. Clique no olho de um canal para ver.' : 'Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.';
+      els.vazioTxt.textContent = iframes.size && !visiveis ? tr('As lives valendo estão tocando escondidas. Clique no olho de um canal para ver.') : tr('Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.');
     }
     function verAgora(slug) {
       if (!aoVivo(slug)) return;
@@ -419,50 +425,50 @@
       const ativos = pkk ? Object.values(pkk.bonus || {}).filter((ate) => Number(ate) > Date.now()) : [];
       const maior = ativos.length ? Math.max(...ativos.map(Number)) - Date.now() : 0;
       repor(els.chips,
-        chip(`${vivos}/${total} ao vivo`, '', 'Canais da lista ao vivo agora / total'),
-        chip(`valendo ${vagasAtuais.length}/${vagasN()}`, vagasN() > 2 ? 'alerta' : 'ok', 'Lives tocando de verdade. A Kick só paga pontos em 2 por vez (medido)'),
-        chip(`+${fmt(ganho)} pts`, 'ok', 'Pontos ganhos desde que a sala abriu'),
-        pkk ? chip(ativos.length ? `PokeIdle: ${ativos.length} bônus · ${duracao(maior)}` : 'PokeIdle: sem bônus ativo', ativos.length ? 'ok' : '', 'Bônus da Kick no PokeIdle (horas compradas com pontos)') : null,
-        pacotesHoje ? chip(`${pacotesHoje} pacote${pacotesHoje > 1 ? 's' : ''} em 24 h`, 'ok', 'Pacotes XP + Capture + Lure comprados nas últimas 24 h') : null,
-        diaria ? chip(diaria.pega ? 'diária pega ✓' : `diária ${Math.min(diaria.prog, diaria.meta)}/${diaria.meta} min`, diaria.pega ? 'ok' : '', 'Daily Reward da Kick: 1 h assistida no dia') : null,
-        erro ? chip('Kick: ' + erro, 'alerta', 'Erro ao falar com a Kick; tenta de novo sozinha') : null,
-        !sessao() ? chip('Entre na sua conta da Kick', 'alerta') : null);
+        chip(tr('{v}/{t} ao vivo', { v: vivos, t: total }), '', tr('Canais da lista ao vivo agora / total')),
+        chip(tr('valendo {n}/{t}', { n: vagasAtuais.length, t: vagasN() }), vagasN() > 2 ? 'alerta' : 'ok', tr('Lives tocando de verdade. A Kick só paga pontos em 2 por vez (medido)')),
+        chip(tr('+{p} pts', { p: fmt(ganho) }), 'ok', tr('Pontos ganhos desde que a sala abriu')),
+        pkk ? chip(ativos.length ? tr('PokeIdle: {n} bônus · {d}', { n: ativos.length, d: duracao(maior) }) : tr('PokeIdle: sem bônus ativo'), ativos.length ? 'ok' : '', tr('Bônus da Kick no PokeIdle (horas compradas com pontos)')) : null,
+        pacotesHoje ? chip(tr(pacotesHoje > 1 ? tr('{n} pacotes em 24 h') : tr('{n} pacote em 24 h'), { n: pacotesHoje }), 'ok', tr('Pacotes XP + Capture + Lure comprados nas últimas 24 h')) : null,
+        diaria ? chip(diaria.pega ? tr('diária pega ✓') : tr('diária {a}/{b} min', { a: Math.min(diaria.prog, diaria.meta), b: diaria.meta }), diaria.pega ? 'ok' : '', tr('Daily Reward da Kick: 1 h assistida no dia')) : null,
+        erro ? chip('Kick: ' + erro, 'alerta', tr('Erro ao falar com a Kick; tenta de novo sozinha')) : null,
+        !sessao() ? chip(tr('Entre na sua conta da Kick'), 'alerta') : null);
     }
     function renderAbas() {
       repor(els.abas,
-        h('button', { class: 'aba' + (aba === 'canais' ? ' on' : ''), onclick: () => { aba = 'canais'; render(); } }, 'Canais', cfg.canais.length ? h('span', { class: 'cont' }, String(cfg.canais.length)) : null),
+        h('button', { class: 'aba' + (aba === 'canais' ? ' on' : ''), onclick: () => { aba = 'canais'; render(); } }, tr('Canais'), cfg.canais.length ? h('span', { class: 'cont' }, String(cfg.canais.length)) : null),
         h('button', { class: 'aba' + (aba === 'pokeidle' ? ' on' : ''), onclick: () => { aba = 'pokeidle'; render(); } }, 'PokeIdle'),
-        h('button', { class: 'aba' + (aba === 'ajustes' ? ' on' : ''), onclick: () => { aba = 'ajustes'; render(); } }, 'Ajustes'));
+        h('button', { class: 'aba' + (aba === 'ajustes' ? ' on' : ''), onclick: () => { aba = 'ajustes'; render(); } }, tr('Ajustes')));
     }
     function cardCanal(c) {
       const i = info[c.slug] || {};
       const tocando = vagasAtuais.includes(c.slug);
       const pac = pacotes[c.slug];
       const ganho = typeof i.saldo === 'number' && typeof i.saldoInicial === 'number' ? i.saldo - i.saldoInicial : 0;
-      const status = i.inexistente ? 'canal não existe' : i.aoVivo === undefined ? 'carregando…' : i.aoVivo ? `${i.jogo || 'ao vivo'} · ${fmt(i.espectadores)} assistindo` : 'offline';
+      const status = i.inexistente ? tr('canal não existe') : i.aoVivo === undefined ? tr('carregando…') : i.aoVivo ? (i.jogo || tr('ao vivo')) + ' · ' + tr('{n} assistindo', { n: fmt(i.espectadores) }) : tr('offline');
       return h('div', { class: 'card' + (tocando ? ' tocando' : '') + (i.aoVivo ? ' vivo' : '') },
         i.img ? h('img', { src: i.img, alt: '' }) : h('div', { class: 'ph' }),
         h('div', { class: 'meio' },
           h('div', { class: 'nome' }, i.nome || c.slug,
-            tocando ? h('span', { class: 'tag t1' }, ic('play', 9), 'valendo') : i.aoVivo && modo(c) !== 'fora' ? h('span', { class: 'tag' }, 'na fila') : null),
+            tocando ? h('span', { class: 'tag t1' }, ic('play', 9), tr('valendo')) : i.aoVivo && modo(c) !== 'fora' ? h('span', { class: 'tag' }, tr('na fila')) : null),
           h('div', { class: 'st' }, status),
-          h('div', { class: 'st' }, typeof i.saldo === 'number' ? `${fmt(i.saldo)} pts` : '— pts',
+          h('div', { class: 'st' }, typeof i.saldo === 'number' ? tr('{n} pts', { n: fmt(i.saldo) }) : tr('{n} pts', { n: '—' }),
             ganho > 0 ? h('b', { class: 'ganho' }, ` +${fmt(ganho)}`) : null,
-            pac && pac.custo ? ` · pacote ${fmt(pac.custo)}` : null),
+            pac && pac.custo ? ' · ' + tr('pacote {n}', { n: fmt(pac.custo) }) : null),
           h('div', { class: 'tags' },
-            ehPokeidle(c.slug) ? h('span', { class: 'tag t3', title: 'Canal oficial do PokeIdle na Kick (lido do jogo)' }, 'PokeIdle') : null)),
+            ehPokeidle(c.slug) ? h('span', { class: 'tag t3', title: tr('Canal oficial do PokeIdle na Kick (lido do jogo)') }, 'PokeIdle') : null)),
         h('div', { class: 'lado' },
           h('div', { class: 'bts' },
-            i.aoVivo && !tocando && modo(c) !== 'fora' ? h('button', { class: 'ic agora', title: 'Ver agora: fixa esta live numa vaga (volte para Fila quando quiser)', 'aria-label': 'Ver agora', onclick: () => verAgora(c.slug) }, ic('play', 14)) : null,
-            h('button', { class: 'ic' + (c.mostrar ? ' on' : ''), title: c.mostrar ? 'Vídeo aparece na sala (clique para esconder; continua contando)' : 'Vídeo toca escondido (clique para mostrar)', 'aria-label': c.mostrar ? 'Esconder vídeo' : 'Mostrar vídeo', onclick: () => definir(c.slug, 'mostrar') }, ic(c.mostrar ? 'olho' : 'olhoFechado')),
-            h('button', { class: 'ic x', title: 'Tirar da lista', 'aria-label': 'Tirar da lista', onclick: () => remover(c.slug) }, ic('x', 14))),
+            i.aoVivo && !tocando && modo(c) !== 'fora' ? h('button', { class: 'ic agora', title: tr('Ver agora: fixa esta live numa vaga (volte para Fila quando quiser)'), 'aria-label': tr('Ver agora'), onclick: () => verAgora(c.slug) }, ic('play', 14)) : null,
+            h('button', { class: 'ic' + (c.mostrar ? ' on' : ''), title: c.mostrar ? tr('Vídeo aparece na sala (clique para esconder; continua contando)') : tr('Vídeo toca escondido (clique para mostrar)'), 'aria-label': c.mostrar ? tr('Esconder vídeo') : tr('Mostrar vídeo'), onclick: () => definir(c.slug, 'mostrar') }, ic(c.mostrar ? 'olho' : 'olhoFechado')),
+            h('button', { class: 'ic x', title: tr('Tirar da lista'), 'aria-label': tr('Tirar da lista'), onclick: () => remover(c.slug) }, ic('x', 14))),
           h('div', { class: 'modos' },
-            ...[['fixo', 'Fixo', 'Sempre tem vaga quando está ao vivo'], ['fila', 'Fila', 'Entra numa vaga quando sobrar (PokeIdle: primeiro o que está mais perto de fechar o pacote)'], ['fora', 'Fora', 'Nunca toca: só acompanha o saldo']]
+            ...[['fixo', tr('Fixo'), tr('Sempre tem vaga quando está ao vivo')], ['fila', tr('Fila'), tr('Entra numa vaga quando sobrar (PokeIdle: primeiro o que está mais perto de fechar o pacote)')], ['fora', tr('Fora'), tr('Nunca toca: só acompanha o saldo')]]
               .map(([m, rot, dica]) => h('button', { class: 'modo' + (modo(c) === m ? ' on' : ''), title: dica, onclick: () => definir(c.slug, 'modo', m) }, rot)))));
     }
     // resumo do PokeIdle no topo da aba Canais (o que importa na Kick: vínculo, bônus comprados, próximo pacote)
     function resumoPokeidle() {
-      if (!pkk) return h('div', { class: 'pk' }, h('p', { class: 'nota' }, 'PokeIdle: ainda sem dados do jogo. Com o PokeIdle aberto numa aba, recarregue a aba do jogo (F5) uma vez.'));
+      if (!pkk) return h('div', { class: 'pk' }, h('p', { class: 'nota' }, tr('PokeIdle: ainda sem dados do jogo. Com o PokeIdle aberto numa aba, recarregue a aba do jogo (F5) uma vez.')));
       const agora = Date.now();
       const oficiais = (pkk.oficiais || []).filter((o) => o.ativo !== false);
       const vivos = oficiais.filter((o) => o.aoVivo).length;
@@ -480,14 +486,14 @@
       }
       const tw = pk && pk.vinculado ? P.pkPct(pk.pct) : '';
       return h('div', { class: 'pk' },
-        !pkk.vinculado ? h('p', { class: 'aviso' }, 'Kick não vinculada no PokeIdle: o resgate automático está parado para você não perder pontos. Vincule no jogo (Bônus na Kick).') : null,
-        outraConta ? h('p', { class: 'aviso' }, `O PokeIdle está vinculado a "${pkk.login}", mas a Kick aberta aqui é "${eu}". O resgate só roda na conta vinculada.`) : null,
-        h('div', { class: 'st' }, h('b', {}, 'PokeIdle'), ` · ${vivos}/${oficiais.length} canais oficiais ao vivo · `,
-          ativos.length ? 'bônus: ' + ativos.map(([t, ate]) => `${nomes[t] || t} até ${hhmm(Number(ate))}`).join(', ') : 'nenhum bônus ativo'),
+        !pkk.vinculado ? h('p', { class: 'aviso' }, tr('Kick não vinculada no PokeIdle: o resgate automático está parado para você não perder pontos. Vincule no jogo (Bônus na Kick).')) : null,
+        outraConta ? h('p', { class: 'aviso' }, tr('O PokeIdle está vinculado a "{a}", mas a Kick aberta aqui é "{b}". O resgate só roda na conta vinculada.', { a: pkk.login, b: eu })) : null,
+        h('div', { class: 'st' }, h('b', {}, 'PokeIdle'), ' · ' + tr('{v}/{n} canais oficiais ao vivo', { v: vivos, n: oficiais.length }) + ' · ',
+          ativos.length ? tr('bônus: {l}', { l: ativos.map(([t, ate]) => tr('{n} até {h}', { n: nomes[t] || t, h: hhmm(Number(ate)) })).join(', ') }) : tr('nenhum bônus ativo')),
         prox ? h('div', { class: 'st' }, prox.falta
-          ? `Próximo pacote: ${prox.nome}, faltam ${fmt(prox.falta)} pts${prox.tocando ? ` (~${duracao(prox.falta / 10 * 5 * 60000)} tocando)` : ''}`
-          : `Próximo pacote: ${prox.nome}, saldo já cobre${cfg.resgateAuto && pkk.vinculado ? ' (resgatando)' : ''}`) : null,
-        !cfg.resgateAuto ? h('div', { class: 'st' }, 'Resgate automático desligado nos Ajustes.') : null,
+          ? tr('Próximo pacote: {c}, faltam {n} pts', { c: prox.nome, n: fmt(prox.falta) }) + (prox.tocando ? ' (~' + tr('{d} tocando', { d: duracao(prox.falta / 10 * 5 * 60000) }) + ')' : '')
+          : tr('Próximo pacote: {c}, saldo já cobre', { c: prox.nome }) + (cfg.resgateAuto && pkk.vinculado ? ' (' + tr('resgatando') + ')' : '')) : null,
+        !cfg.resgateAuto ? h('div', { class: 'st' }, tr('Resgate automático desligado nos Ajustes.')) : null,
         tw ? h('div', { class: 'st' }, h('b', { class: 'tw' }, 'Twitch'), ` · ${tw}`) : null);
     }
     function renderCanais() {
@@ -500,44 +506,44 @@
       });
       const ultimos = eventos.filter((e) => e.em > Date.now() - 24 * 3600e3).slice(0, 4);
       const secao = (rot, n) => h('div', { class: 'secao' }, h('span', {}, rot, h('span', { class: 'n' }, String(n))));
-      const grupos = [['Valendo agora', ordem.filter((c) => vagasAtuais.includes(c.slug))],
-        ['Ao vivo, esperando', ordem.filter((c) => !vagasAtuais.includes(c.slug) && aoVivo(c.slug))],
-        ['Offline', ordem.filter((c) => !vagasAtuais.includes(c.slug) && !aoVivo(c.slug))]];
+      const grupos = [[tr('Valendo agora'), ordem.filter((c) => vagasAtuais.includes(c.slug))],
+        [tr('Ao vivo, esperando'), ordem.filter((c) => !vagasAtuais.includes(c.slug) && aoVivo(c.slug))],
+        [tr('Offline'), ordem.filter((c) => !vagasAtuais.includes(c.slug) && !aoVivo(c.slug))]];
       return [
         h('form', { class: 'add', onsubmit: (e) => { e.preventDefault(); adicionar(els.input.value); els.input.value = ''; } },
-          els.input = h('input', { placeholder: 'canal ou link da Kick', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Adicionar canal' }),
-          h('button', { class: 'bt' }, 'Adicionar')),
+          els.input = h('input', { placeholder: tr('canal ou link da Kick'), autocomplete: 'off', spellcheck: 'false', 'aria-label': tr('Adicionar canal') }),
+          h('button', { class: 'bt' }, tr('Adicionar'))),
         h('div', { class: 'atalhos' },
-          h('button', { class: 'lk', onclick: puxarSeguidos, title: 'Adiciona os canais que você segue e estão ao vivo' }, ic('mais'), 'seguidos ao vivo'),
-          h('button', { class: 'lk', disabled: !pkk, title: pkk ? 'Põe na lista os canais oficiais do PokeIdle na Kick (sem tirar os seus)' : 'A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5)', onclick: () => { cfg.seguirPokeidle = true; cfg.pkIgnorar = []; salvar(); sincronizarPokeidle(); render(); } }, ic('mais'), 'canais do PokeIdle')),
+          h('button', { class: 'lk', onclick: puxarSeguidos, title: tr('Adiciona os canais que você segue e estão ao vivo') }, ic('mais'), tr('seguidos ao vivo')),
+          h('button', { class: 'lk', disabled: !pkk, title: pkk ? tr('Põe na lista os canais oficiais do PokeIdle na Kick (sem tirar os seus)') : tr('A Plateia ainda não leu o jogo: recarregue a aba do PokeIdle (F5)'), onclick: () => { cfg.seguirPokeidle = true; cfg.pkIgnorar = []; salvar(); sincronizarPokeidle(); render(); } }, ic('mais'), tr('canais do PokeIdle'))),
         resumoPokeidle(),
         h('div', { class: 'lista' }, ...(ordem.length
           ? grupos.flatMap(([rot, l]) => (l.length ? [secao(rot, l.length), ...l.map(cardCanal)] : []))
-          : [h('p', { class: 'nota', style: 'padding:0 8px' }, 'Nenhum canal ainda. Digite um canal acima ou use os atalhos.')])),
+          : [h('p', { class: 'nota', style: 'padding:0 8px' }, tr('Nenhum canal ainda. Digite um canal acima ou use os atalhos.'))])),
         h('div', { class: 'barra-lista' },
-          h('button', { class: 'mini', disabled: !pkk, title: 'Tira tudo e deixa só os canais oficiais do PokeIdle na Kick', onclick: () => limpar(true) }, 'Só canais do PokeIdle'),
-          h('button', { class: 'mini' + (conf ? ' perigo' : ''), title: 'Tira todos os canais e desliga "Seguir canais do PokeIdle"', onclick: () => limpar(false) }, conf ? 'Clique de novo para limpar' : 'Limpar lista')),
-        drops.length ? h('div', { class: 'drops' }, h('div', { class: 'tit' }, ic('presente', 15), 'Drops da Kick'),
+          h('button', { class: 'mini', disabled: !pkk, title: tr('Tira tudo e deixa só os canais oficiais do PokeIdle na Kick'), onclick: () => limpar(true) }, tr('Só canais do PokeIdle')),
+          h('button', { class: 'mini' + (conf ? ' perigo' : ''), title: tr('Tira todos os canais e desliga "Seguir canais do PokeIdle"'), onclick: () => limpar(false) }, conf ? tr('Clique de novo para limpar') : tr('Limpar lista'))),
+        drops.length ? h('div', { class: 'drops' }, h('div', { class: 'tit' }, ic('presente', 15), tr('Drops da Kick')),
           ...drops.slice(0, 6).map((d) => h('div', { class: 'drop' },
-            h('div', { class: 'st' }, h('b', {}, d.nome), ` · ${Math.min(d.min, d.req)}/${d.req} min`, d.conectado ? null : ' · conecte a conta do jogo'),
+            h('div', { class: 'st' }, h('b', {}, d.nome), ` · ${Math.min(d.min, d.req)}/${d.req} min`, d.conectado ? null : ' · ' + tr('conecte a conta do jogo')),
             h('div', { class: 'barra' }, h('i', { style: `width:${d.req ? Math.min(100, Math.round(d.min / d.req * 100)) : 0}%` }))))) : null,
-        ultimos.length ? h('div', { class: 'drops' }, h('div', { class: 'tit' }, 'Pegos hoje'), ...ultimos.map((e) => h('div', { class: 'st' }, (e.ok ? '✓ ' : '✗ ') + e.texto))) : null,
-        h('p', { class: 'nota' }, 'A Kick só paga pontos em 2 lives por vez (medido em 2026-10-23). Lives da Kick abertas em outras abas entram nessa conta.')
+        ultimos.length ? h('div', { class: 'drops' }, h('div', { class: 'tit' }, tr('Pegos hoje')), ...ultimos.map((e) => h('div', { class: 'st' }, (e.ok ? '✓ ' : '✗ ') + e.texto))) : null,
+        h('p', { class: 'nota' }, tr('A Kick só paga pontos em 2 lives por vez (medido em 2026-10-23). Lives da Kick abertas em outras abas entram nessa conta.'))
       ];
     }
     function renderAjustes() {
       const linha = (rotulo, ctrl, dica) => h('label', { class: 'aj' }, h('span', {}, rotulo, dica ? h('small', {}, dica) : null), ctrl);
       const chk = (campo) => h('input', { type: 'checkbox', checked: !!cfg[campo], onchange: (e) => { cfg[campo] = e.target.checked; salvar(); sincronizarPokeidle(); aplicarVagas(); render(); } });
       const grupo = (tit, ...itens) => h('div', { class: 'grupo' }, h('div', { class: 'grupo-tit' }, tit), ...itens);
-      return [grupo('Lives tocando',
-        linha('Vagas', h('input', { type: 'number', min: 1, max: MAX_VAGAS, value: cfg.vagas, onchange: (e) => { cfg.vagas = Math.max(1, Math.min(MAX_VAGAS, parseInt(e.target.value, 10) || 2)); salvar(); aplicarVagas(); render(); } }), 'Quantas lives tocam de verdade. A Kick só paga pontos em 2.'),
-        vagasN() > 2 ? h('p', { class: 'aviso' }, 'Acima de 2, as lives extras não ganham pontos.') : null,
+      return [grupo(tr('Lives tocando'),
+        linha(tr('Vagas'), h('input', { type: 'number', min: 1, max: MAX_VAGAS, value: cfg.vagas, onchange: (e) => { cfg.vagas = Math.max(1, Math.min(MAX_VAGAS, parseInt(e.target.value, 10) || 2)); salvar(); aplicarVagas(); render(); } }), tr('Quantas lives tocam de verdade. A Kick só paga pontos em 2.')),
+        vagasN() > 2 ? h('p', { class: 'aviso' }, tr('Acima de 2, as lives extras não ganham pontos.')) : null,
       ), grupo('PokeIdle',
-        linha('Resgate automático do PokeIdle', chk('resgateAuto'), 'Espera o saldo do canal cobrir XP + Capture Boost + Secret Lure e compra um de cada. Só com a Kick vinculada no jogo.'),
-        linha('Seguir canais do PokeIdle', chk('seguirPokeidle'), 'Põe e tira da lista, sozinho, os canais oficiais da Kick que o jogo mostra.'),
-      ), grupo('Automático',
-        linha('Daily Reward automática', chk('diariaAuto'), 'Pega a recompensa diária da Kick quando completa 1 h assistida no dia.'),
-        linha('Drops automáticos', chk('dropsAuto'), 'Resgata o Drop da Kick quando chega a 100% (precisa da conta do jogo conectada).'))
+        linha(tr('Resgate automático do PokeIdle'), chk('resgateAuto'), tr('Espera o saldo do canal cobrir XP + Capture Boost + Secret Lure e compra um de cada. Só com a Kick vinculada no jogo.')),
+        linha(tr('Seguir canais do PokeIdle'), chk('seguirPokeidle'), tr('Põe e tira da lista, sozinho, os canais oficiais da Kick que o jogo mostra.')),
+      ), grupo(tr('Automático'),
+        linha(tr('Daily Reward automática'), chk('diariaAuto'), tr('Pega a recompensa diária da Kick quando completa 1 h assistida no dia.')),
+        linha(tr('Drops automáticos'), chk('dropsAuto'), tr('Resgata o Drop da Kick quando chega a 100% (precisa da conta do jogo conectada).')))
       ];
     }
     function render() {

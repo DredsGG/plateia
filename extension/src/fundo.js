@@ -42,6 +42,36 @@ const salvar = async (patch) => {
   return novo;
 };
 
+// resumo do que mudou na versão nova, nos 3 idiomas, lido dos arquivos de changelog do próprio Release
+// (raw.githubusercontent.com responde com CORS liberado; sem permissão nova)
+function itensDaVersao(js, v) {
+  const i = js.indexOf("'" + v + "'");
+  if (i < 0) return [];
+  let k = js.indexOf('[', i);
+  if (k < 0) return [];
+  const out = [];
+  for (k++; k < js.length; k++) {
+    const c = js[k];
+    if (c === ']') break;
+    if (c === "'" || c === '"') {
+      let txt = '';
+      for (k++; k < js.length && js[k] !== c; k++) { if (js[k] === '\\') { k++; txt += js[k]; } else txt += js[k]; }
+      out.push(txt);
+    }
+  }
+  return out.slice(0, 8);
+}
+async function novidadesRemotas(tag, v) {
+  const out = {};
+  for (const l of ['pt', 'en', 'es']) {
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${encodeURIComponent(tag)}/extension/src/changelog/${l}.js`, { cache: 'no-store' });
+      if (r.ok) { const itens = itensDaVersao(await r.text(), v); if (itens.length) out[l] = itens; }
+    } catch (e) {}
+  }
+  return out;
+}
+
 async function procurar() {
   const cur = atual();
   const base = { procuradoEm: Date.now(), atual: cur, instalacao: await tipoInstalacao() };
@@ -52,7 +82,11 @@ async function procurar() {
     const ultima = String(j.tag_name || '').replace(/^v/i, '');
     const zip = ((j.assets || []).find((a) => /\.zip$/i.test(a.name)) || {}).browser_download_url || null;
     const xpi = ((j.assets || []).find((a) => /\.xpi$/i.test(a.name)) || {}).browser_download_url || null;
-    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel: !!ultima && cmpVer(ultima, cur) > 0, erro: null }));
+    const disponivel = !!ultima && cmpVer(ultima, cur) > 0;
+    const antes = (await ext.storage.local.get('atualizacao')).atualizacao || {};
+    const novidades = !disponivel ? null
+      : antes.novidadesDe === ultima && antes.novidades ? antes.novidades : await novidadesRemotas(j.tag_name, ultima);
+    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel, novidades, novidadesDe: disponivel ? ultima : null, erro: null }));
   } catch (e) {
     return salvar(Object.assign(base, { erro: String((e && e.message) || e) }));
   }

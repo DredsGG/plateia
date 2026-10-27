@@ -17,10 +17,11 @@
     }
     return el;
   };
+  const tr = (txt, vars) => P.t(txt, vars);
   const repor = (el, ...filhos) => el.replaceChildren(...filhos.flat().filter((f) => f !== null && f !== undefined && f !== false));
-  const fmt = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('pt-BR'));
+  const fmt = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString(P.local()));
   const mmss = (ms) => { ms = Math.max(0, ms); const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-  const hhmm = (ts) => new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const hhmm = (ts) => new Date(ts).toLocaleTimeString(P.local(), { hour: '2-digit', minute: '2-digit' });
   const duracao = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `${m} min`; };
   // desenha SVG a partir de texto fixo sem innerHTML (o validador do Firefox reclama de innerHTML)
   const svgDe = (alvo, conteudo) => {
@@ -41,10 +42,17 @@
       '<path d="M44 118c0-11.5 9-18.5 20-18.5s20 7 20 18.5z"/></g>');
     return s;
   };
-  const assinatura = () => h('div', { class: 'assina' }, 'feito por ',
+  const assinatura = () => h('div', { class: 'assina' }, tr('feito por') + ' ',
     h('a', { href: 'https://github.com/DredsGG', target: '_blank', rel: 'noopener noreferrer', title: 'github.com/DredsGG' }, 'Dreds'),
     P.versao() ? ' · v' + P.versao() : null);
 
+  // seletor de idioma (regra 13): PT · EN · ES no rodapé das salas; a troca recarrega a sala
+  const seletorIdioma = () => h('div', { class: 'idiomas', role: 'group', 'aria-label': tr('Idioma') },
+    ...P.IDIOMAS.map((l) => h('button', {
+      class: 'idioma' + (P.idioma === l ? ' on' : ''), lang: l, title: { pt: 'Português', en: 'English', es: 'Español' }[l],
+      'aria-pressed': P.idioma === l ? 'true' : 'false',
+      onclick: async () => { if (P.idioma === l) return; await P.trocarIdioma(l); location.reload(); }
+    }, l.toUpperCase())));
   // ---------- Ícones (SVG: emoji muda de cara em cada sistema) ----------
   const ICONES = {
     play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
@@ -208,6 +216,13 @@
   .assina a:hover{text-decoration:underline}
   .upd{margin-top:auto;padding-top:16px}
   .upd + .assina{margin-top:0;padding-top:6px}
+  .rodape-fim{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:8px}
+  .upd + .rodape-fim{margin-top:0;padding-top:6px}
+  .rodape-fim .assina{margin-top:0;padding-top:0}
+  .idiomas{display:flex;gap:2px;padding:2px;border-radius:var(--r-bt);background:var(--elev2)}
+  .idioma{height:22px;min-width:30px;padding:0 7px;border:0;border-radius:var(--r-bt);background:transparent;color:var(--suave);font:700 11px Inter,Arial,sans-serif;cursor:pointer}
+  .idioma:hover{color:var(--texto)}
+  .idioma.on{background:var(--cor);color:var(--cor-texto)}
   /* palco */
   .palco{flex:1;display:grid;gap:6px;padding:6px;min-width:0;background:#000;position:relative;grid-auto-rows:1fr}
   .palco iframe{width:100%;height:100%;border:0;background:#000;border-radius:var(--r-card);min-height:0}
@@ -234,10 +249,25 @@
   .qd-bt:hover{background:var(--cor2)}
   .qd-bt.sec{background:var(--sec);color:var(--texto)}
   .qd-bt.sec:hover{background:var(--sec2)}
+  .solto .qd-fundo{position:fixed;background:none;pointer-events:none}
+  .qd-fundo.leve{background:none;pointer-events:none}
+  .qd-fundo.leve .qd{pointer-events:auto;box-shadow:0 18px 48px rgba(0,0,0,.6),0 0 0 1px var(--linha)}
+  .solto .qd{pointer-events:auto;width:min(420px,100%);box-shadow:0 18px 48px rgba(0,0,0,.6),0 0 0 1px var(--linha)}
+  .qd-ver{color:var(--apagado);font-weight:600;font-size:12.5px}
+  .qd-dica{margin:12px 0 0!important;font-size:12.5px!important}
+  .qd-dica a{color:var(--link)}
   .qd-q{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;font-weight:800;font-size:11px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
   `;
 
+  const cmpVersao = (a, b) => {
+    const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0), pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0 ? 1 : -1; }
+    return 0;
+  };
+  const salvarDispensa = async (versao) => {
+    try { const r = await P.ext.storage.local.get('atualizacao'); await P.ext.storage.local.set({ atualizacao: Object.assign({}, r.atualizacao || {}, { dispensada: versao }) }); } catch (e) {}
+  };
   // ---------- Tutorial de primeiro uso e Novidades (regra 12) ----------
   const TUTORIAL = {
     twitch: [
@@ -266,12 +296,12 @@
     };
     const marcarVisto = async () => { const q = (await P.ler('quadros', null)) || {}; q.tutorial = true; q.novidades = P.versao(); await P.gravar('quadros', q); };
     const montar = (conteudo, fecharFn) => {
-      const fundo = h('div', { class: 'qd-fundo', onclick: (e) => { if (e.target === fundo) fecharFn(); } },
-        h('div', { class: 'qd', role: 'dialog', 'aria-modal': 'true' },
-          h('button', { class: 'qd-x', title: 'Fechar (Esc)', 'aria-label': 'Fechar', onclick: fecharFn }, icone('x', 14)),
+      const fundo = h('div', { class: 'qd-fundo' + (montar.tipo === 'versao' ? ' leve' : ''), onclick: (e) => { if (e.target === fundo) fecharFn(); } },
+        h('div', { class: 'qd', role: 'dialog', 'aria-modal': opts.solto ? 'false' : 'true' },
+          h('button', { class: 'qd-x', title: tr('Fechar (Esc)'), 'aria-label': tr('Fechar'), onclick: fecharFn }, icone('x', 14)),
           ...conteudo));
       opts.app.appendChild(fundo);
-      aberto = { el: fundo, fechar: fecharFn };
+      aberto = { el: fundo, fechar: fecharFn, tipo: montar.tipo };
       document.addEventListener('keydown', esc, true);
     };
     const abrirTutorial = async () => {
@@ -281,45 +311,113 @@
       const corpo = h('div', { class: 'qd-corpo' });
       const fim = () => fechar(marcarVisto);
       const desenhar = () => {
-        const [t, x] = passos[i];
+        const [tt, x] = passos[i];
         repor(corpo,
-          h('div', { class: 'qd-passo' }, `Passo ${i + 1} de ${passos.length}`),
-          h('h3', {}, t), h('p', {}, x),
+          h('div', { class: 'qd-passo' }, tr('Passo {i} de {n}', { i: i + 1, n: passos.length })),
+          h('h3', {}, tr(tt)), h('p', {}, tr(x)),
           h('div', { class: 'qd-pontos' }, ...passos.map((_, k) => h('i', { class: k === i ? 'on' : '' }))),
           h('div', { class: 'qd-bts' },
-            i < passos.length - 1 ? h('button', { class: 'qd-bt sec qd-pular', onclick: fim }, 'Pular') : null,
+            i < passos.length - 1 ? h('button', { class: 'qd-bt sec qd-pular', onclick: fim }, tr('Pular')) : null,
             h('span', { class: 'qd-esp' }),
-            i > 0 ? h('button', { class: 'qd-bt sec', onclick: () => { i--; desenhar(); } }, 'Voltar') : null,
-            i < passos.length - 1 ? h('button', { class: 'qd-bt qd-prox', onclick: () => { i++; desenhar(); } }, 'Próximo')
-              : h('button', { class: 'qd-bt qd-ok', onclick: fim }, 'Entendi')));
+            i > 0 ? h('button', { class: 'qd-bt sec', onclick: () => { i--; desenhar(); } }, tr('Voltar')) : null,
+            i < passos.length - 1 ? h('button', { class: 'qd-bt qd-prox', onclick: () => { i++; desenhar(); } }, tr('Próximo'))
+              : opts.abrirSala ? h('button', { class: 'qd-bt qd-ok', onclick: () => fechar(marcarVisto).then(opts.abrirSala) }, tr('Abrir a sala')) : null,
+            i === passos.length - 1 && !opts.abrirSala ? h('button', { class: 'qd-bt qd-ok', onclick: fim }, tr('Entendi')) : null,
+            i === passos.length - 1 && opts.abrirSala ? h('button', { class: 'qd-bt sec qd-entendi', onclick: fim }, tr('Entendi')) : null));
       };
       desenhar();
-      montar([h('div', { class: 'qd-tit' }, logo(22), h('b', {}, opts.sala === 'kick' ? 'Como usar a sala da Kick' : 'Como usar a sala da Twitch')), corpo], fim);
+      montar.tipo = 'tutorial';
+      montar([h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr(opts.sala === 'kick' ? 'Como usar a sala da Kick' : 'Como usar a sala da Twitch'))), corpo], fim);
     };
     const abrirNovidades = (v) => {
-      const itens = (P.CHANGELOG && P.CHANGELOG.pt && P.CHANGELOG.pt[v]) || [];
+      const cl = P.CHANGELOG || {};
+      const itens = (cl[P.idioma] && cl[P.idioma][v]) || (cl.en && cl.en[v]) || (cl.pt && cl.pt[v]) || [];
       if (!itens.length) return false;
       fechar();
       const fim = () => fechar(marcarVisto);
+      montar.tipo = 'novidades';
       montar([
-        h('div', { class: 'qd-tit' }, logo(22), h('b', {}, `Novidades da v${v}`)),
+        h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr('Novidades da v{v}', { v }))),
         h('ul', { class: 'qd-lista' }, ...itens.map((t) => h('li', {}, t))),
         h('div', { class: 'qd-bts' },
-          h('button', { class: 'qd-bt sec', onclick: () => fechar(marcarVisto).then(abrirTutorial) }, 'Ver o tutorial'),
+          h('button', { class: 'qd-bt sec', onclick: () => fechar(marcarVisto).then(abrirTutorial) }, tr('Ver o tutorial')),
           h('span', { class: 'qd-esp' }),
-          h('button', { class: 'qd-bt qd-ok', onclick: fim }, 'Entendi'))], fim);
+          h('button', { class: 'qd-bt qd-ok', onclick: fim }, tr('Entendi')))], fim);
       return true;
     };
-    // instalação nova: só o tutorial; atualização: só as novidades (uma vez por versão)
+    // aviso de versão nova (regra 14): resumo do que mudou + Atualizar; o X esconde até sair outra mais nova
+    const temNova = (st) => !!(st && st.disponivel && st.ultima && st.dispensada !== st.ultima && cmpVersao(st.ultima, P.versao()) > 0);
+    const abrirNovaVersao = (st) => {
+      if (!temNova(st)) return false;
+      fechar();
+      const dispensar = () => fechar(() => salvarDispensa(st.ultima));
+      const nov = st.novidades || {};
+      const itens = (nov[P.idioma] && nov[P.idioma].length ? nov[P.idioma] : nov.en && nov.en.length ? nov.en : nov.pt && nov.pt.length ? nov.pt : notasEmItens(st.notas)).slice(0, 6);
+      const dica = h('p', { class: 'qd-dica', style: 'display:none' });
+      montar.tipo = 'versao';
+      montar([
+        h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr('Nova versão v{v}', { v: st.ultima })), h('span', { class: 'qd-ver' }, tr('você tem a v{v}', { v: P.versao() }))),
+        itens.length ? h('ul', { class: 'qd-lista' }, ...itens.map((t) => h('li', {}, t))) : h('p', {}, tr('Versão nova da Plateia disponível no GitHub.')),
+        dica,
+        h('div', { class: 'qd-bts' },
+          h('button', { class: 'qd-bt sec', onclick: () => enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }) }, tr('Como atualizar')),
+          h('span', { class: 'qd-esp' }),
+          h('button', { class: 'qd-bt qd-ok qd-atualizar', onclick: async () => {
+            const r = await enviar({ cmd: 'aplicarAtualizacao' });
+            const txt = r && r.modo === 'download' ? (P.ehFirefox && P.ehFirefox()
+              ? tr('Zip baixado. No Firefox (instalação temporária): extraia e carregue de novo em about:debugging → Carregar extensão temporária.')
+              : tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.'))
+              : r && r.modo === 'xpi' ? tr('Abri o .xpi numa aba: confirme a instalação no Firefox.')
+              : r && r.modo === 'loja' ? (r.status === 'aplicando' ? tr('Atualizando…') : tr('O navegador ainda não liberou a versão nova. Tente de novo mais tarde.'))
+              : tr('Não deu para atualizar agora. Use "Como atualizar".');
+            dica.textContent = txt; dica.style.display = '';
+          } }, tr('Atualizar')))], dispensar);
+      return true;
+    };
+    // instalação nova: só o tutorial; atualização: só as novidades (uma vez por versão); senão, versão nova
     const checar = async () => {
       const v = P.versao();
       const q = await P.ler('quadros', null);
-      if (q && q.tutorial) { if (q.novidades !== v && !abrirNovidades(v)) await marcarVisto(); return; }
       const at = (await P.ler('atualizacao', null)) || {};
+      if (q && q.tutorial) {
+        if (q.novidades !== v && !abrirNovidades(v)) await marcarVisto();
+        if (!aberto && opts.avisarVersao !== false) abrirNovaVersao(at);
+        return;
+      }
       if (at.instalacaoNova || !abrirNovidades(v)) abrirTutorial();
     };
-    const botao = h('button', { class: 'bt fantasma qd-ajuda', title: 'Como usar a sala', 'aria-label': 'Como usar', onclick: abrirTutorial }, h('span', { class: 'qd-q' }, '?'), 'Como usar');
-    return { botao, abrirTutorial, abrirNovidades, checar };
+    let parado = false;
+    P.aoMudar((m) => {
+      if (parado) return;
+      // outra aba já mostrou o tutorial/novidades: fecha aqui também
+      if (m.quadros && aberto && (aberto.tipo === 'tutorial' || aberto.tipo === 'novidades')) {
+        const q = m.quadros.newValue || {};
+        if (q.tutorial && q.novidades === P.versao()) fechar();
+      }
+      if (m.atualizacao) {
+        const st = m.atualizacao.newValue || {};
+        if (aberto && aberto.tipo === 'versao' && !temNova(st)) fechar();
+        else if (!aberto && opts.avisarVersao !== false && temNova(st) && !temNova(m.atualizacao.oldValue)) abrirNovaVersao(st);
+      }
+    });
+    const botao = h('button', { class: 'bt fantasma qd-ajuda', title: tr('Como usar a sala'), 'aria-label': tr('Como usar'), onclick: abrirTutorial }, h('span', { class: 'qd-q' }, '?'), tr('Como usar'));
+    return { botao, abrirTutorial, abrirNovidades, abrirNovaVersao, checar, aberto: () => (aberto ? aberto.tipo : null), parar: () => { parado = true; fechar(); } };
+  };
+  // ---------- Avisos na página do site (regra 14): tutorial, novidades e versão nova sem abrir a sala ----------
+  const avisosSite = async (opts) => {
+    if (window.top !== window || document.getElementById('plateia-avisos')) return null;
+    await P.idiomaPronto;
+    const host = h('div', { id: 'plateia-avisos' });
+    host.style.cssText = 'position:fixed;inset:0;z-index:2147483001;pointer-events:none';
+    const raiz = host.attachShadow({ mode: 'open' });
+    raiz.appendChild(h('style', {}, cssSala(opts.sala) + '.app.solto{background:none;pointer-events:none}'));
+    const app = h('div', { class: 'app solto' });
+    raiz.appendChild(app);
+    document.documentElement.appendChild(host);
+    const qd = quadros({ app, sala: opts.sala, solto: true, abrirSala: opts.abrirSala });
+    P.avisos = qd; // usado pelos testes
+    await qd.checar();
+    return qd;
   };
   // ---------- Atualização (regra 7): procura no GitHub, aviso com o que mudou, botão Atualizar ----------
   const enviar = (msg) => Promise.resolve().then(() => P.ext.runtime.sendMessage(msg)).then((r) => r || null, () => null);
@@ -336,14 +434,14 @@
   const navegador = () => {
     const ua = navigator.userAgent || '';
     const m = ua.match(/(Edg|OPR|Chrome)\/(\d+)/);
-    const nome = m ? ({ Edg: 'Edge', OPR: 'Opera', Chrome: 'Chrome' })[m[1]] + ' ' + m[2] : 'navegador desconhecido';
-    const so = /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : 'outro sistema';
+    const nome = m ? ({ Edg: 'Edge', OPR: 'Opera', Chrome: 'Chrome' })[m[1]] + ' ' + m[2] : tr('navegador desconhecido');
+    const so = /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : tr('outro sistema');
     return `${nome} · ${so} · ${navigator.language || '?'}`;
   };
   const relatarBug = (opts, lerSt) => {
     let aberto = false;
     const caixa = h('div', { class: 'upd-bug', style: 'display:none' });
-    const campo = h('textarea', { class: 'upd-bug-txt', rows: '3', placeholder: 'O que aconteceu? O que você esperava? (ex.: a live entrou e saiu, o baú não foi pego)' });
+    const campo = h('textarea', { class: 'upd-bug-txt', rows: '3', placeholder: tr('O que aconteceu? O que você esperava? (ex.: a live entrou e saiu, o baú não foi pego)') });
     // as teclas digitadas aqui não vão para os atalhos da Twitch/Kick
     for (const ev of ['keydown', 'keyup', 'keypress']) campo.addEventListener(ev, (e) => e.stopPropagation());
     const previa = h('pre', { class: 'upd-bug-pre' });
@@ -351,48 +449,49 @@
     const diagnostico = () => {
       const st = lerSt() || {};
       const linhas = [
-        ['Plateia', `v${P.versao()}${st.instalacao ? ' (' + (st.instalacao === 'development' ? 'pasta' : st.instalacao) + ')' : ''}`],
-        ['Sala', opts.sala || '?'],
-        ['Navegador', navegador()],
-        ['Página', location.host + location.pathname],
-        ['Atualização', st.erro && !st.ultima ? 'não deu para procurar (' + st.erro + ')' : st.ultima ? `última no GitHub: v${st.ultima}` : 'ainda não procurou'],
+        ['Plateia', `v${P.versao()}${st.instalacao ? ' (' + (st.instalacao === 'development' ? tr('pasta') : st.instalacao) + ')' : ''}`],
+        [tr('Sala'), opts.sala || '?'],
+        [tr('Navegador'), navegador()],
+        [tr('Idioma'), P.idioma],
+        [tr('Página'), location.host + location.pathname],
+        [tr('Atualização'), st.erro && !st.ultima ? tr('não deu para procurar ({e})', { e: st.erro }) : st.ultima ? tr('última no GitHub: v{v}', { v: st.ultima }) : tr('ainda não procurou')],
       ];
-      try { for (const l of (opts.diagnostico ? opts.diagnostico() : [])) if (l && l.length === 2) linhas.push(l); } catch (e) { linhas.push(['Diagnóstico da sala', 'falhou: ' + e.message]); }
-      linhas.push(['Hora', new Date().toISOString()]);
+      try { for (const l of (opts.diagnostico ? opts.diagnostico() : [])) if (l && l.length === 2) linhas.push(l); } catch (e) { linhas.push([tr('Diagnóstico da sala'), tr('falhou: {e}', { e: e.message })]); }
+      linhas.push([tr('Hora'), new Date().toISOString()]);
       return linhas.map(([k, v]) => `- ${k}: ${v}`).join('\n');
     };
     const corpo = () => {
-      const t = (campo.value || '').trim().slice(0, 3000);
-      return `**O que aconteceu?**\n${t || '(não descrito)'}\n\n**Diagnóstico** (gerado pela Plateia, sem dados da conta)\n${diagnostico()}\n`;
+      const txt = (campo.value || '').trim().slice(0, 3000);
+      return `**${tr('O que aconteceu?')}**\n${txt || tr('(não descrito)')}\n\n**${tr('Diagnóstico')}** (${tr('gerado pela Plateia, sem dados da conta')})\n${diagnostico()}\n`;
     };
     const atualizarPrevia = () => { previa.textContent = diagnostico(); };
     const abrirNoGithub = () => {
-      const t = (campo.value || '').trim().split('\n')[0].slice(0, 70);
-      const url = REPO_ISSUES + '?title=' + encodeURIComponent('[Bug] ' + (t || 'relato pela sala ' + (opts.sala || ''))) + '&body=' + encodeURIComponent(corpo());
+      const tit = (campo.value || '').trim().split('\n')[0].slice(0, 70);
+      const url = REPO_ISSUES + '?title=' + encodeURIComponent('[Bug] ' + (tit || tr('relato pela sala {s}', { s: opts.sala || '' }))) + '&body=' + encodeURIComponent(corpo());
       window.open(url.length > 7900 ? url.slice(0, 7900) : url, '_blank', 'noopener');
-      aviso.textContent = 'Abri o relato no GitHub. Confira e clique em Create.';
+      aviso.textContent = tr('Abri o relato no GitHub. Confira e clique em Create.');
     };
     const copiar = async () => {
       const txt = corpo();
-      try { await navigator.clipboard.writeText(txt); aviso.textContent = 'Relatório copiado.'; }
+      try { await navigator.clipboard.writeText(txt); aviso.textContent = tr('Relatório copiado.'); }
       catch (e) {
         const ta = h('textarea', { style: 'position:fixed;left:-9999px' }); ta.value = txt; caixa.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); aviso.textContent = 'Relatório copiado.'; } catch (e2) { aviso.textContent = 'Não deu para copiar.'; }
+        try { document.execCommand('copy'); aviso.textContent = tr('Relatório copiado.'); } catch (e2) { aviso.textContent = tr('Não deu para copiar.'); }
         ta.remove();
       }
     };
     repor(caixa,
-      h('b', {}, 'Relatar bug'),
-      h('p', { class: 'upd-bug-dica' }, 'Abre um relato público nos Issues do GitHub (precisa de conta no GitHub). Vai junto só o diagnóstico abaixo, nada da sua conta.'),
+      h('b', {}, tr('Relatar bug')),
+      h('p', { class: 'upd-bug-dica' }, tr('Abre um relato público nos Issues do GitHub (precisa de conta no GitHub). Vai junto só o diagnóstico abaixo, nada da sua conta.')),
       campo,
-      h('details', { class: 'upd-bug-det' }, h('summary', {}, 'O que vai junto'), previa),
+      h('details', { class: 'upd-bug-det' }, h('summary', {}, tr('O que vai junto')), previa),
       h('div', { class: 'upd-bts' },
-        h('button', { class: 'upd-bug-bt pri', onclick: abrirNoGithub }, 'Abrir no GitHub'),
-        h('button', { class: 'upd-bug-bt', onclick: copiar }, 'Copiar relatório'),
-        h('button', { class: 'upd-bug-bt', onclick: () => alternar(false) }, 'Fechar')),
+        h('button', { class: 'upd-bug-bt pri', onclick: abrirNoGithub }, tr('Abrir no GitHub')),
+        h('button', { class: 'upd-bug-bt', onclick: copiar }, tr('Copiar relatório')),
+        h('button', { class: 'upd-bug-bt', onclick: () => alternar(false) }, tr('Fechar'))),
       aviso);
     const alternar = (v) => { aberto = v === undefined ? !aberto : v; caixa.style.display = aberto ? '' : 'none'; if (aberto) { atualizarPrevia(); aviso.textContent = ''; campo.focus(); } };
-    const botao = h('button', { class: 'upd-proc upd-bugbt', title: 'Relatar um bug no GitHub da Plateia', onclick: () => alternar() }, svgBug(), 'Relatar bug');
+    const botao = h('button', { class: 'upd-proc upd-bugbt', title: tr('Relatar um bug no GitHub da Plateia'), onclick: () => alternar() }, svgBug(), tr('Relatar bug'));
     return { caixa, botao, corpo, diagnostico, abrirNoGithub };
   };
   const atualizacao = (opts = {}) => {
@@ -405,31 +504,28 @@
       const v = P.versao();
       const temNova = st.disponivel && st.ultima && st.dispensada !== st.ultima;
       const recente = st.acabouDeAtualizar && agora - st.acabouDeAtualizar.em < 30 * 60000 && st.acabouDeAtualizar.para === v;
-      const status = procurando ? 'Procurando…' : st.erro && !st.ultima ? 'Não deu para procurar agora'
-        : st.disponivel ? h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); salvarDispensa(null); } }, `v${st.ultima} disponível`)
-        : st.ultima ? 'Você está na versão mais nova' : '';
+      const status = procurando ? tr('Procurando…') : st.erro && !st.ultima ? tr('Não deu para procurar agora')
+        : st.disponivel ? h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); salvarDispensa(null); } }, tr('v{v} disponível', { v: st.ultima }))
+        : st.ultima ? tr('Você está na versão mais nova') : '';
       repor(caixa,
-        recente ? h('div', { class: 'upd-ok' }, `Plateia atualizada: v${st.acabouDeAtualizar.de || '?'} → v${st.acabouDeAtualizar.para}`) : null,
+        recente ? h('div', { class: 'upd-ok' }, tr('Plateia atualizada: v{de} → v{para}', { de: st.acabouDeAtualizar.de || '?', para: st.acabouDeAtualizar.para })) : null,
         temNova ? h('div', { class: 'upd-card' },
-          h('b', {}, 'Atualização disponível'), h('span', { class: 'upd-ver' }, ` · v${v} → v${st.ultima}`),
+          h('b', {}, tr('Atualização disponível')), h('span', { class: 'upd-ver' }, ` · v${v} → v${st.ultima}`),
           ...(notasEmItens(st.notas).length ? [h('ul', {}, ...notasEmItens(st.notas).map((n) => h('li', {}, n)))] : []),
           baixou ? h('p', { class: 'upd-dica' }, P.ehFirefox && P.ehFirefox()
-            ? 'Zip baixado. No Firefox (instalação temporária): extraia e carregue de novo em about:debugging → Carregar extensão temporária. '
-            : 'Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto. ',
-            h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }); } }, 'Como fazer')) : null,
+            ? tr('Zip baixado. No Firefox (instalação temporária): extraia e carregue de novo em about:debugging → Carregar extensão temporária.') + ' '
+            : tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.') + ' ',
+            h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }); } }, tr('Como fazer'))) : null,
           h('div', { class: 'upd-bts' },
-            h('button', { class: 'upd-bt', onclick: async () => { const r = await enviar({ cmd: 'aplicarAtualizacao' }); baixou = !!(r && r.modo === 'download'); desenhar(); } }, 'Atualizar'),
-            h('button', { class: 'upd-bt sec', onclick: () => salvarDispensa(st.ultima) }, 'Depois'))) : null,
+            h('button', { class: 'upd-bt', onclick: async () => { const r = await enviar({ cmd: 'aplicarAtualizacao' }); baixou = !!(r && r.modo === 'download'); desenhar(); } }, tr('Atualizar')),
+            h('button', { class: 'upd-bt sec', onclick: () => salvarDispensa(st.ultima) }, tr('Depois')))) : null,
         bug.caixa,
         h('div', { class: 'upd-linha' },
-          h('button', { class: 'upd-proc' + (procurando ? ' girando' : ''), title: 'Procurar versão nova no GitHub', onclick: procurar }, h('span', { class: 'upd-ic' }, '↻'), 'Procurar atualização'),
+          h('button', { class: 'upd-proc' + (procurando ? ' girando' : ''), title: tr('Procurar versão nova no GitHub'), onclick: procurar }, h('span', { class: 'upd-ic' }, '↻'), tr('Procurar atualização')),
           bug.botao,
           h('span', { class: 'upd-esp' }),
-          h('button', { class: 'upd-i', title: 'Como instalar e atualizar', onclick: () => enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }) }, 'i')),
+          h('button', { class: 'upd-i', title: tr('Como instalar e atualizar'), onclick: () => enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }) }, 'i')),
         status ? h('div', { class: 'upd-st' }, status) : null);
-    };
-    const salvarDispensa = async (versao) => {
-      try { const r = await P.ext.storage.local.get('atualizacao'); await P.ext.storage.local.set({ atualizacao: Object.assign({}, r.atualizacao || {}, { dispensada: versao }) }); } catch (e) {}
     };
     const procurar = async () => {
       procurando = true; desenhar();
@@ -484,14 +580,15 @@
   `;
   // bolinha dourada no botão "Plateia" quando tem versão nova
   const marcarNovidade = async (botao) => {
+    await P.idiomaPronto;
     const aplicar = (st) => {
       const nova = !!(st && st.disponivel && st.ultima && st.dispensada !== st.ultima);
       botao.classList.toggle('nova', nova);
-      if (nova) botao.title = `Plateia v${st.ultima} disponível: abra a sala para atualizar`;
+      if (nova) botao.title = tr('Plateia v{v} disponível: abra a sala para atualizar', { v: st.ultima });
     };
     try { aplicar((await P.ext.storage.local.get('atualizacao')).atualizacao); } catch (e) {}
     P.aoMudar((m) => { if (m.atualizacao) aplicar(m.atualizacao.newValue); });
   };
   const CSS_BOLINHA = 'button.nova::after{content:"";position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ffd76a;border:2px solid #0e0e10}';
-  P.ui = { svgDe, h, repor, fmt, mmss, hhmm, duracao, logo, assinatura, atualizacao, CSS_ATUALIZACAO, marcarNovidade, CSS_BOLINHA, icone, cssSala, quadros };
+  P.ui = { svgDe, h, repor, fmt, mmss, hhmm, duracao, logo, assinatura, atualizacao, CSS_ATUALIZACAO, marcarNovidade, CSS_BOLINHA, icone, cssSala, quadros, seletorIdioma, avisosSite };
 })();

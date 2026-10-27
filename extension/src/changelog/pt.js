@@ -5,6 +5,12 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.8.0': [
+      'A Plateia agora fala português, inglês e espanhol. Na primeira vez ela usa o idioma do navegador.',
+      'Troque o idioma quando quiser no seletor PT · EN · ES, no rodapé da sala.',
+      'Tutorial, novidades e aviso de versão nova aparecem sozinhos na página da Twitch ou da Kick, sem abrir a sala.',
+      'O aviso de versão nova mostra o que mudou e tem o botão Atualizar. O X esconde até sair uma versão mais nova.'
+    ],
     '0.7.0': [
       'Visual novo nas duas salas, no estilo da Twitch e da Kick.',
       'A lista de canais agora é separada em "Valendo agora", "Ao vivo, esperando" e "Offline", com o tempo do rodízio no título.',
