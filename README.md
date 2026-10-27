@@ -14,9 +14,9 @@ A Chrome extension for **Twitch and Kick**. It grabs the Twitch channel-points c
 ![Tests](https://img.shields.io/badge/tests-61%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-<img src="docs/plateia-sala.png" width="900" alt="Plateia room: channel list with modes and tags on the left, the two lives that are earning points on the right">
+<img src="docs/plateia-twitch-room.png" width="900" alt="Plateia Twitch room: header with live counters (6/7 live, in chat 7/7, earning 2/2, next swap, points and chests gained, PokeIdle bonus); on the left the Channels tab with each channel's status, tags and Fixed / Rotation / Chat only modes; on the right the two lives that are earning points">
 
-<sub>The Twitch room with demo channels (simulated Twitch, made-up names).</sub>
+<sub>The Twitch room with demo channels (simulated Twitch, Kick and PokeIdle, made-up names).</sub>
 
 </div>
 
@@ -35,7 +35,8 @@ The extension knows which site it's on. **Twitch** and **Kick** each get their o
   - **2 lives that count.** Twitch only pays points and chests on 2 streams at a time, so 2 slots play for real: the full channel page in an iframe, muted, at 160p. The 👁 button hides a live without reloading it (it keeps counting).
   - **Rotation.** Slots rotate between the channels that are live every N minutes (20 by default, 10 minimum), so every channel earns at some point. Each channel can be **Fixed** (always gets a slot), **Rotation** or **Chat only**, and **▶** puts one on screen right now.
   - **Live counters:** live/total, in chat X/Y, earning 2/2, time to the next swap, points and chests since the room opened, balance per channel, Drops in progress.
-- **Add channels** by name or link, from the channels you follow that are live, or from the game below.
+- **Add channels** by name or link, from the channels you follow that are live, or from the game below. **Clear list** (asks for a second click) and **PokeIdle channels only** start the list over.
+- **Settings** (collapsible *Ajustes* at the end of the list): number of slots, rotation on/off, minutes per round, chat presence, follow PokeIdle's channels, chest and Drops on autopilot, 160p for the room's lives.
 - **PokeIdle bonus.** [PokeIdle](https://pokeidle.io) gives an XP bonus for being in the chat of its partner streams. With the game open in a tab, Plateia reads the list of bonus channels from the game itself (read only, it never sends anything to the game), keeps them on the list and shows whether the game already sees you on each one.
 
 ### Kick
@@ -45,19 +46,18 @@ Kick has no chest to click: points drop by themselves (10 every 5 minutes watche
 - **Room with 2 slots in focus mode.** The channels closest to completing a PokeIdle bundle play first, so bundles close sooner. Each channel can be **Fixed**, **Queue** or **Off**; **▶** pins one right now.
 - **Bundle redemption.** When a channel's balance covers **one of each** PokeIdle reward (XP + Capture Boost + Secret Lure), it redeems the three in a row through the site's own endpoint. Guard rails: only with Kick linked inside the game, only if the game is linked to the same Kick account, only full bundles (all three rewards active), stops on the first error and waits 15 minutes.
 - **Daily Reward and Drops.** Claims Kick's Daily Reward after the hour watched, and finished Drops when the game account is connected.
+- **Settings tab:** number of slots, automatic bundle redemption, follow PokeIdle's Kick channels, Daily Reward and Drops on autopilot. Each one can be turned off.
 
 ### PokeIdle tab
 
-<img src="docs/plateia-kick.png" width="900" alt="Kick room: channels with PokeIdle tags and bundle cost on the left, the two lives earning points on the right">
+<img src="docs/plateia-kick-room.png" width="900" alt="Plateia Kick room: header with live counters, points gained, PokeIdle bonus hours and Daily Reward progress; on the left the channels with PokeIdle tags, balance and bundle cost, Kick Drops progress; on the right the two lives earning points">
 
-<img src="docs/plateia-pokeidle.png" width="320" alt="PokeIdle tab: Twitch bonus and who sees you, Kick bonus hours and the bundle progress per channel">
+<img src="docs/plateia-pokeidle-tab.png" width="320" alt="PokeIdle tab: Twitch bonus with the three bonus lives that already see you; Kick active bonuses with end time, and the bundle progress per channel with a time estimate">
 
 - **Twitch:** current bonus (15% + 2.5% per extra live) and which bonus lives already see you.
 - **Kick:** active bonus hours (until when), bundle progress per channel with a time estimate, last redemptions.
 
 <sub>Kick room and PokeIdle tab with demo data (simulated Kick and PokeIdle, made-up names).</sub>
-
-> The interface is in Portuguese, the language I use.
 
 ## How it was measured
 
@@ -81,7 +81,7 @@ extension/
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
-├── src/ui.js                shared UI pieces, logo and footer signature
+├── src/ui.js                shared UI pieces: logo, update card, footer signature
 ├── src/pokeidle-painel.js   the PokeIdle tab used by both rooms
 ├── src/pokeidle-ponte.js    pokeidle.io, page world: reads the game's twitch and kick blocks from its WebSocket (read only)
 ├── src/pokeidle-guarda.js   pokeidle.io: stores those blocks for the rooms
@@ -96,7 +96,9 @@ extension/
 
 ## Updates
 
-Plateia checks this repo's latest release when Chrome starts, every 6 hours and when you press **↻ Check for updates** in either room. A new version shows a gold card with what changed and a gold dot on the Plateia button; **Update** downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running).
+<img src="docs/plateia-update-card.png" width="320" alt="Update card in the room footer: 'Atualização disponível · v0.4.0 → v0.4.1', the release notes as a list, buttons Atualizar (update) and Depois (later), and below it the Procurar atualização (check for updates) button">
+
+Plateia checks this repo's latest release when Chrome starts, every 6 hours and when you press **↻ Procurar atualização** (check for updates) in either room. A new version shows a gold card with the release notes and a gold dot on the Plateia button. **Atualizar** (update) downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running). **Depois** (later) hides the card until the next version. The **i** button opens the install and update guide.
 
 ## Install
 
@@ -106,12 +108,26 @@ Plateia checks this repo's latest release when Chrome starts, every 6 hours and 
 4. Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purple on Twitch, green on Kick).
 5. For PokeIdle, reload the game tab once after installing so Plateia can read the official channels.
 
+## Languages
+
+- The rooms are in **Portuguese**, the language I use.
+- The install and update guide (`COMO-INSTALAR.html`) is in **Portuguese and English**, with flag buttons to switch.
+
+## Known limitations
+
+- Twitch and Kick only pay points on **2 lives at a time** (measured), so only 2 slots play for real; the other channels get chat presence on Twitch and nothing on Kick.
+- Drops progress on one channel at a time, so the room doesn't speed them up.
+- A real Drop claimed at 100% and a real Kick bundle redemption haven't been seen live yet; the logic is covered by the tests.
+- The self-reload after an update needs **Developer mode** to stay on in `chrome://extensions`.
+- PokeIdle features need the game open in a tab (reload it once after installing Plateia). Bundle redemption only runs with Kick linked inside the game.
+- Chrome (and other Chromium browsers) only.
+
 ## Tests
 
 ```bash
 cd tests && npm i jsdom
 node teste-sala.cjs         # Twitch room logic in jsdom: 27/27
-node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab
+node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab: 15/15
 node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
 
