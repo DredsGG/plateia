@@ -121,13 +121,31 @@
         h('aside', {},
           els.abas = h('div', { class: 'abas' }),
           els.conteudo = h('div', { class: 'conteudo' }),
-          P.ui.atualizacao(),
+          P.ui.atualizacao({ sala: 'Kick', diagnostico: () => diagnosticoSala() }),
           assinatura()),
         els.palco = h('main', { class: 'palco' },
           els.vazio = h('div', { class: 'vazio' }, 'Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.')))));
     document.documentElement.appendChild(host);
     if (document.body) document.body.style.overflow = 'hidden';
     document.title = 'Plateia · sala da Kick';
+
+    // diagnóstico do "Relatar bug": só números e estados, sem nome de canal, login ou token
+    function diagnosticoSala() {
+      const dia = Date.now() - 24 * 3600e3;
+      const r24 = resgates.filter((r) => r.em > dia);
+      return [
+        ['Login na Kick', sessao() ? 'sim' : 'não'],
+        ['Canais na lista', `${cfg.canais.length} (${cfg.canais.filter((c) => aoVivo(c.slug)).length} ao vivo; fixos ${cfg.canais.filter((c) => modo(c) === 'fixo').length}, fora ${cfg.canais.filter((c) => modo(c) === 'fora').length})`],
+        ['Valendo', `${vagasAtuais.length}/${vagasN()}`],
+        ['Resgate automático', cfg.resgateAuto ? 'ligado' : 'desligado'],
+        ['PokeIdle (Kick)', pkk ? `${pkk.vinculado ? 'vinculado' : 'não vinculado'}${pkk.vinculado && pkk.login && eu ? (pkk.login.toLowerCase() === eu.toLowerCase() ? ' · mesma conta' : ' · OUTRA conta') : ''} · ${(pkk.oficiais || []).length} canais oficiais` : 'sem dados do jogo'],
+        ['Pacotes lidos', `${Object.values(pacotes).filter((p) => p.itens.length === 3).length} completos, ${Object.values(pacotes).filter((p) => p.erro).length} com erro`],
+        ['Resgates em 24 h', `${r24.filter((r) => r.ok).length} ok, ${r24.filter((r) => !r.ok).length} falharam${r24.find((r) => !r.ok) ? ' (último: ' + r24.find((r) => !r.ok).erro + ')' : ''}`],
+        ['Daily Reward', diaria ? (diaria.pega ? 'pega' : `${diaria.prog}/${diaria.meta} min`) : 'sem dados'],
+        ['Drops em andamento', String(drops.length)],
+        ['Erro da Kick', erro || 'nenhum'],
+      ];
+    }
 
     // ----- canais -----
     const modo = (c) => c.modo || 'fila';

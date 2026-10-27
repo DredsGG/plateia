@@ -10,8 +10,8 @@ A Chrome extension for **Twitch and Kick**. It grabs the Twitch channel-points c
 ![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.4.1-9146FF)
-![Tests](https://img.shields.io/badge/tests-61%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.4.2-9146FF)
+![Tests](https://img.shields.io/badge/tests-72%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 <img src="docs/plateia-twitch-room.png" width="900" alt="Plateia Twitch room: header with live counters (6/7 live, in chat 7/7, earning 2/2, next swap, points and chests gained, PokeIdle bonus); on the left the Channels tab with each channel's status, tags and Fixed / Rotation / Chat only modes; on the right the two lives that are earning points">
@@ -81,7 +81,7 @@ extension/
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
-├── src/ui.js                shared UI pieces: logo, update card, footer signature
+├── src/ui.js                shared UI pieces: logo, update card, bug report, footer signature
 ├── src/pokeidle-painel.js   the PokeIdle tab used by both rooms
 ├── src/pokeidle-ponte.js    pokeidle.io, page world: reads the game's twitch and kick blocks from its WebSocket (read only)
 ├── src/pokeidle-guarda.js   pokeidle.io: stores those blocks for the rooms
@@ -99,6 +99,10 @@ extension/
 <img src="docs/plateia-update-card.png" width="320" alt="Update card in the room footer: 'Atualização disponível · v0.4.0 → v0.4.1', the release notes as a list, buttons Atualizar (update) and Depois (later), and below it the Procurar atualização (check for updates) button">
 
 Plateia checks this repo's latest release when Chrome starts, every 6 hours and when you press **↻ Procurar atualização** (check for updates) in either room. A new version shows a gold card with the release notes and a gold dot on the Plateia button. **Atualizar** (update) downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running). **Depois** (later) hides the card until the next version. The **i** button opens the install and update guide.
+
+## Reporting a bug
+
+**Relatar bug** (report a bug), in the footer of both rooms next to the update check, opens a prefilled issue in this repo with the version and a short diagnostic: browser, room, counts and on/off states only (no account name, token or channel names). You can read exactly what goes along before sending, or use **Copiar relatório** (copy report) instead.
 
 ## Install
 
@@ -127,9 +131,10 @@ Plateia checks this repo's latest release when Chrome starts, every 6 hours and 
 ```bash
 cd tests && npm i jsdom
 node teste-sala.cjs         # Twitch room logic in jsdom: 27/27
-node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab: 15/15
+node teste-kick.cjs         # Kick room: bundle, order, guard rails, Daily Reward, Drops, tab, bug report: 16/16
 node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
+node teste-rodape.cjs       # footer: update check, bug report without personal data, signature: 10/10
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10

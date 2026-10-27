@@ -80,6 +80,8 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   abas.find((b) => b.textContent === 'PokeIdle').click();
   await espera(50);
   ok('aba PokeIdle mostra bônus de XP ativo e pacote por canal', /\+15% XP/.test(a.sr().textContent) && /Pacote por canal/.test(a.sr().textContent));
+  const dk = (a.w.PLATEIA.relatarBug && a.w.PLATEIA.relatarBug.diagnostico()) || '';
+  ok('Relatar bug na Kick: diagnóstico com versão e sala, sem nome de canal nem conta', /Sala: Kick/.test(dk) && /Plateia: v/.test(dk) && /Valendo: 2\/2/.test(dk) && !/yoda|matta|jukes|offline1|dredsgg/i.test(dk));
   ok('assinatura "feito por Dreds · v' + manifest.version + '"', a.sr().querySelector('.assina').textContent === 'feito por Dreds · v' + manifest.version && a.sr().querySelector('.assina a').textContent === 'Dreds');
 
   // 2) sem vínculo no jogo: nunca resgata

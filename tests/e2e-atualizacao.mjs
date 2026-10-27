@@ -1,16 +1,12 @@
-// E2E do aviso de atualização: node e2e-atualizacao.mjs <cópia da pasta da extensão> (o teste altera o manifest da cópia)
 import { chromium } from 'playwright';
 import fs from 'fs';
-import os from 'os';
-import path from 'path';
-const EXT = path.resolve(process.argv[2]);
-// versão da cópia e a "nova" que o GitHub falso anuncia (patch + 1)
-const ATUAL = JSON.parse(fs.readFileSync(EXT + '/manifest.json', 'utf8')).version;
-const NOVA = ATUAL.replace(/(\d+)$/, (n) => String(+n + 1));
-const ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'pw-perfil-upd-' + Date.now()), {
+const EXT = process.argv[2];
+const ctx = await chromium.launchPersistentContext('/tmp/pw-perfil-upd-' + Date.now(), {
   channel: 'chromium', headless: true, viewport: { width: 1400, height: 860 },
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
 });
+const ATUAL = JSON.parse(fs.readFileSync(EXT + '/manifest.json', 'utf8')).version;
+const NOVA = ATUAL.replace(/\d+$/, (n) => String(+n + 1));
 const ok = (c, m) => console.log((c ? 'OK  ' : 'FALHOU ') + m);
 await ctx.route('**/*', async (route) => {
   const url = route.request().url();
@@ -28,7 +24,7 @@ await new Promise((r) => setTimeout(r, 1500));
 const guia = ctx.pages().find((p) => p.url().includes('COMO-INSTALAR.html'));
 ok(!!guia, 'instalação abre o guia (#usar)');
 if (guia) { await guia.reload(); await guia.waitForTimeout(800); await guia.screenshot({ path: 'upd-guia.png', fullPage: true }); }
-// GitHub falso: release vNOVA com notas
+// GitHub falso: release v0.4.1 com notas
 const stub = async () => sw.evaluate((NOVA) => {
   const real = self.__fetchReal || (self.__fetchReal = self.fetch);
   self.fetch = (u, o) => String(u).includes('api.github.com') ? Promise.resolve(new Response(JSON.stringify({
@@ -50,14 +46,14 @@ await p.waitForTimeout(1200);
 const card = raiz.locator('.upd-card');
 ok(await card.count() === 1, 'aviso dourado aparece');
 const txt = await card.textContent();
-ok(txt.includes(`v${ATUAL} → v${NOVA}`), 'mostra versões: ' + txt.slice(0, 60));
+ok(txt.includes('v' + ATUAL + ' → v' + NOVA), 'mostra versões: ' + txt.slice(0, 60));
 ok(txt.includes('Corrige o relógio'), 'mostra o que mudou (sem **)');
 await raiz.locator('aside').screenshot({ path: 'upd-sala-aviso.png' });
 // Atualizar → abre o zip
 const nova = ctx.waitForEvent('page');
 await raiz.locator('.upd-bt:not(.sec)').click();
 const aba = await nova;
-ok(aba.url().endsWith(`plateia-v${NOVA}.zip`), 'Atualizar baixa o zip: ' + aba.url());
+ok(aba.url().endsWith('plateia-v' + NOVA + '.zip'), 'Atualizar baixa o zip: ' + aba.url());
 await p.bringToFront();
 await p.waitForTimeout(600);
 ok((await raiz.locator('.upd-dica').count()) === 1, 'mostra dica de extrair por cima');

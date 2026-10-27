@@ -42,9 +42,81 @@
   const enviar = (msg) => new Promise((ok) => { try { chrome.runtime.sendMessage(msg, (r) => { void chrome.runtime.lastError; ok(r || null); }); } catch (e) { ok(null); } });
   const notasEmItens = (txt) => String(txt || '').split(/\r?\n/).map((l) => l.trim())
     .filter((l) => /^[-*•]\s+/.test(l)).map((l) => l.replace(/^[-*•]\s+/, '').replace(/\*\*/g, '').replace(/`/g, '')).slice(0, 6);
-  const atualizacao = () => {
+  // ---------- Relatar bug (regra 9): relato nos Issues do repo, com versão e diagnóstico sem dado pessoal ----------
+  const REPO_ISSUES = 'https://github.com/DredsGG/plateia/issues/new';
+  const svgBug = () => {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', 13); s.setAttribute('height', 13); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="7" width="10" height="13" rx="5"/><path d="M9 7.5V6a3 3 0 0 1 6 0v1.5M12 11v9M3 13h4M17 13h4M4 7.5l3 2.5M20 7.5l-3 2.5M4 19.5l3.2-2.5M20 19.5l-3.2-2.5"/></g>';
+    return s;
+  };
+  const navegador = () => {
+    const ua = navigator.userAgent || '';
+    const m = ua.match(/(Edg|OPR|Chrome)\/(\d+)/);
+    const nome = m ? ({ Edg: 'Edge', OPR: 'Opera', Chrome: 'Chrome' })[m[1]] + ' ' + m[2] : 'navegador desconhecido';
+    const so = /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : 'outro sistema';
+    return `${nome} · ${so} · ${navigator.language || '?'}`;
+  };
+  const relatarBug = (opts, lerSt) => {
+    let aberto = false;
+    const caixa = h('div', { class: 'upd-bug', style: 'display:none' });
+    const campo = h('textarea', { class: 'upd-bug-txt', rows: '3', placeholder: 'O que aconteceu? O que você esperava? (ex.: a live entrou e saiu, o baú não foi pego)' });
+    // as teclas digitadas aqui não vão para os atalhos da Twitch/Kick
+    for (const ev of ['keydown', 'keyup', 'keypress']) campo.addEventListener(ev, (e) => e.stopPropagation());
+    const previa = h('pre', { class: 'upd-bug-pre' });
+    const aviso = h('span', { class: 'upd-bug-ok' });
+    const diagnostico = () => {
+      const st = lerSt() || {};
+      const linhas = [
+        ['Plateia', `v${P.versao()}${st.instalacao ? ' (' + (st.instalacao === 'development' ? 'pasta' : st.instalacao) + ')' : ''}`],
+        ['Sala', opts.sala || '?'],
+        ['Navegador', navegador()],
+        ['Página', location.host + location.pathname],
+        ['Atualização', st.erro && !st.ultima ? 'não deu para procurar (' + st.erro + ')' : st.ultima ? `última no GitHub: v${st.ultima}` : 'ainda não procurou'],
+      ];
+      try { for (const l of (opts.diagnostico ? opts.diagnostico() : [])) if (l && l.length === 2) linhas.push(l); } catch (e) { linhas.push(['Diagnóstico da sala', 'falhou: ' + e.message]); }
+      linhas.push(['Hora', new Date().toISOString()]);
+      return linhas.map(([k, v]) => `- ${k}: ${v}`).join('\n');
+    };
+    const corpo = () => {
+      const t = (campo.value || '').trim().slice(0, 3000);
+      return `**O que aconteceu?**\n${t || '(não descrito)'}\n\n**Diagnóstico** (gerado pela Plateia, sem dados da conta)\n${diagnostico()}\n`;
+    };
+    const atualizarPrevia = () => { previa.textContent = diagnostico(); };
+    const abrirNoGithub = () => {
+      const t = (campo.value || '').trim().split('\n')[0].slice(0, 70);
+      const url = REPO_ISSUES + '?title=' + encodeURIComponent('[Bug] ' + (t || 'relato pela sala ' + (opts.sala || ''))) + '&body=' + encodeURIComponent(corpo());
+      window.open(url.length > 7900 ? url.slice(0, 7900) : url, '_blank', 'noopener');
+      aviso.textContent = 'Abri o relato no GitHub. Confira e clique em Create.';
+    };
+    const copiar = async () => {
+      const txt = corpo();
+      try { await navigator.clipboard.writeText(txt); aviso.textContent = 'Relatório copiado.'; }
+      catch (e) {
+        const ta = h('textarea', { style: 'position:fixed;left:-9999px' }); ta.value = txt; caixa.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); aviso.textContent = 'Relatório copiado.'; } catch (e2) { aviso.textContent = 'Não deu para copiar.'; }
+        ta.remove();
+      }
+    };
+    repor(caixa,
+      h('b', {}, 'Relatar bug'),
+      h('p', { class: 'upd-bug-dica' }, 'Abre um relato público nos Issues do GitHub (precisa de conta no GitHub). Vai junto só o diagnóstico abaixo, nada da sua conta.'),
+      campo,
+      h('details', { class: 'upd-bug-det' }, h('summary', {}, 'O que vai junto'), previa),
+      h('div', { class: 'upd-bts' },
+        h('button', { class: 'upd-bug-bt pri', onclick: abrirNoGithub }, 'Abrir no GitHub'),
+        h('button', { class: 'upd-bug-bt', onclick: copiar }, 'Copiar relatório'),
+        h('button', { class: 'upd-bug-bt', onclick: () => alternar(false) }, 'Fechar')),
+      aviso);
+    const alternar = (v) => { aberto = v === undefined ? !aberto : v; caixa.style.display = aberto ? '' : 'none'; if (aberto) { atualizarPrevia(); aviso.textContent = ''; campo.focus(); } };
+    const botao = h('button', { class: 'upd-proc upd-bugbt', title: 'Relatar um bug no GitHub da Plateia', onclick: () => alternar() }, svgBug(), 'Relatar bug');
+    return { caixa, botao, corpo, diagnostico, abrirNoGithub };
+  };
+  const atualizacao = (opts = {}) => {
     const caixa = h('div', { class: 'upd' });
     let st = {}, procurando = false, baixou = false;
+    const bug = relatarBug(opts, () => st);
+    P.relatarBug = bug; // usado pelos testes
     const desenhar = () => {
       const agora = Date.now();
       const v = P.versao();
@@ -63,10 +135,13 @@
           h('div', { class: 'upd-bts' },
             h('button', { class: 'upd-bt', onclick: async () => { const r = await enviar({ cmd: 'aplicarAtualizacao' }); baixou = !!(r && r.modo === 'download'); desenhar(); } }, 'Atualizar'),
             h('button', { class: 'upd-bt sec', onclick: () => salvarDispensa(st.ultima) }, 'Depois'))) : null,
+        bug.caixa,
         h('div', { class: 'upd-linha' },
           h('button', { class: 'upd-proc' + (procurando ? ' girando' : ''), title: 'Procurar versão nova no GitHub', onclick: procurar }, h('span', { class: 'upd-ic' }, '↻'), 'Procurar atualização'),
-          h('span', { class: 'upd-st' }, status),
-          h('button', { class: 'upd-i', title: 'Como instalar e atualizar', onclick: () => enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }) }, 'i')));
+          bug.botao,
+          h('span', { class: 'upd-esp' }),
+          h('button', { class: 'upd-i', title: 'Como instalar e atualizar', onclick: () => enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }) }, 'i')),
+        status ? h('div', { class: 'upd-st' }, status) : null);
     };
     const salvarDispensa = async (versao) => {
       try { const r = await chrome.storage.local.get('atualizacao'); await chrome.storage.local.set({ atualizacao: Object.assign({}, r.atualizacao || {}, { dispensada: versao }) }); } catch (e) {}
@@ -94,7 +169,19 @@
   .upd-ic{display:inline-block}
   .upd-proc.girando .upd-ic{animation:girar 1s linear infinite}
   @keyframes girar{to{transform:rotate(360deg)}}
-  .upd-st{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .upd-st{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--apagado,#a8a8b3)}
+  .upd-esp{flex:1}
+  .upd-proc svg{display:block;flex:none}
+  .upd-bug{background:var(--elev,#18181b);border:1px solid var(--linha,#2f2f35);border-radius:var(--r-card,8px);padding:12px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;color:var(--texto,#efeff1)}
+  .upd-bug-dica{margin:0;color:var(--suave,#adadb8);font-size:12px;line-height:1.45}
+  .upd-bug-txt{width:100%;box-sizing:border-box;resize:vertical;min-height:58px;background:var(--bg,#0e0e10);color:var(--texto,#efeff1);border:2px solid var(--linha,#2f2f35);border-radius:var(--r-card,6px);padding:7px 9px;font:13px Inter,Arial,sans-serif;outline:none}
+  .upd-bug-txt:focus{border-color:var(--cor,#9147ff)}
+  .upd-bug-det summary{cursor:pointer;color:var(--suave,#adadb8);font-size:12px}
+  .upd-bug-pre{margin:6px 0 0;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:var(--bg,#0e0e10);border-radius:6px;padding:8px;font:11px/1.45 Consolas,Menlo,monospace;color:var(--suave,#adadb8)}
+  .upd-bug-bt{height:28px;padding:0 12px;border:1px solid var(--linha,#35353b);border-radius:var(--r-bt,6px);background:var(--sec,#26262c);color:var(--texto,#efeff1);font:600 12px Inter,Arial,sans-serif;cursor:pointer}
+  .upd-bug-bt:hover{background:var(--sec2,#35353b)}
+  .upd-bug-bt.pri{border-color:var(--cor,#9147ff)}
+  .upd-bug-ok{font-size:12px;color:var(--ok,#7ee2b8)}
   .upd-i{width:20px;height:20px;border-radius:50%;border:1px solid #303036;background:#1f1f23;color:#dedee3;font:700 11px Georgia,serif;cursor:pointer;padding:0}
   .upd-link{color:var(--cor);font-weight:700;text-decoration:none}
   .upd-card{background:linear-gradient(135deg,#3a2c08,#1f1a0b);border:1px solid #c9a227;border-radius:8px;padding:9px;color:#f6e7b0;font-size:12.5px}

@@ -135,7 +135,7 @@
           h('p', { class: 'nota' },
             'A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. ',
             'Os outros canais ficam com você presente no chat.')),
-          P.ui && P.ui.atualizacao ? P.ui.atualizacao() : null,
+          P.ui.atualizacao({ sala: 'Twitch', diagnostico: () => diagnosticoSala() }),
           h('div', { class: 'assina' }, 'feito por ',
             h('a', { href: 'https://github.com/DredsGG', target: '_blank', rel: 'noopener noreferrer', title: 'github.com/DredsGG' }, 'Dreds'),
             P.versao() ? ' · v' + P.versao() : null)),
@@ -145,6 +145,23 @@
     document.documentElement.appendChild(host);
     document.body && (document.body.style.overflow = 'hidden');
     document.title = 'Plateia · sala';
+
+    // diagnóstico do "Relatar bug": só números e estados, sem nome de canal, login ou token
+    function diagnosticoSala() {
+      const total = cfg.canais.length;
+      return [
+        ['Login na Twitch', P.token() ? 'sim' : 'não'],
+        ['Canais na lista', `${total} (${cfg.canais.filter((c) => aoVivo(c.login)).length} ao vivo; fixos ${cfg.canais.filter((c) => modo(c) === 'fixo').length}, só chat ${cfg.canais.filter((c) => modo(c) === 'chat').length})`],
+        ['Valendo', `${vagasAtuais.length}/${vagasN()}`],
+        ['Chat', cfg.presencaChat ? `${noChat.size}/${total}${ircPronto ? '' : ' (desconectado)'}${ircErro ? ' · ' + ircErro : ''}` : 'desligado'],
+        ['Rodízio', cfg.rodizio ? `${cfg.rodizioMin} min` : 'desligado'],
+        ['Baú / Drops automáticos', `${cfg.bauAuto ? 'sim' : 'não'} / ${cfg.dropsAuto ? 'sim' : 'não'}`],
+        ['Lives em 160p', cfg.qualidadeBaixa ? 'sim' : 'não'],
+        ['PokeIdle', pk ? `${pk.vinculado ? 'vinculado' : 'não vinculado'} · ${pkComBonus().length} canais com bônus · dados de ${Math.round(pkIdade() / 60000)} min` : 'sem dados do jogo'],
+        ['Drops em andamento', String(drops.length)],
+        ['Erro da Twitch', erroGql || 'nenhum'],
+      ];
+    }
 
     // ----- canais -----
     function adicionar(bruto) {
