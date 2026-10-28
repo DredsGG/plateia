@@ -327,6 +327,11 @@
     "Abri o .xpi numa aba: confirme a instalação no Firefox.": "Opened the .xpi in a tab: confirm the install in Firefox.",
     "Atualizando…": "Updating…",
     "O navegador ainda não liberou a versão nova. Tente de novo mais tarde.": "The browser hasn't released the new version yet. Try again later.",
-    "Não deu para atualizar agora. Use \"Como atualizar\".": "Could not update right now. Use \"How to update\"."
+    "Não deu para atualizar agora. Use \"Como atualizar\".": "Could not update right now. Use \"How to update\".",
+    "Atualização urgente v{v}": "Urgent update v{v}",
+    "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "This version fixes a serious problem. Plateia paused chests, claims and the room streams until you update.",
+    "Pausada: atualização urgente": "Paused: urgent update",
+    "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Update Plateia to start earning points, chests and Drops again",
+    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Update Plateia to start earning points, claims and Drops again"
   };
 })();

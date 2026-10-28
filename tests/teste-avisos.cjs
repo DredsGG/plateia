@@ -78,14 +78,56 @@ const esc = (a) => a.w.document.dispatchEvent(new a.w.KeyboardEvent('keydown', {
   await espera(300);
   ok('aparece de novo na próxima abertura (até atualizar)', !!e.quadro() && /Nova versão v9\.9\.9/.test(e.quadro().textContent));
   e.sr().querySelector('.qd-x').click(); await espera(50);
-  ok('X esconde e grava a versão dispensada', !e.quadro() && e.store.atualizacao.dispensada === '9.9.9');
+  const ad = e.store.atualizacao;
+  ok('X só adia: grava "adiado até" daqui a ~1 h para esta versão', !e.quadro() && ad.adiadoVersao === '9.9.9' && Math.abs(ad.adiadoAte - Date.now() - 3600e3) < 5000 && !('dispensada' in ad));
+  e.w.PLATEIA.avisos.tique(); await espera(20);
+  ok('dentro da 1 h: o relógio não reabre', !e.quadro());
+  const agoraReal = e.w.Date.now; e.w.Date.now = () => agoraReal() + 3600e3 + 1000;
+  e.w.PLATEIA.avisos.tique(); await espera(20);
+  ok('passou 1 h: o aviso volta sozinho, na mesma página', !!e.quadro() && /Nova versão v9\.9\.9/.test(e.quadro().textContent));
+  e.w.Date.now = agoraReal;
+  esc(e); await espera(50);
+  ok('Esc também só adia', !e.quadro() && e.store.atualizacao.adiadoAte > Date.now());
   const f = montar({ quadros: { tutorial: true, novidades: V }, atualizacao: e.store.atualizacao });
   await espera(300);
-  ok('dispensada: não aparece mais na mesma versão', !f.quadro());
+  ok('adiada: outra página aberta dentro da 1 h não mostra de novo', !f.quadro());
   await f.mudar({ atualizacao: Object.assign({}, f.store.atualizacao, { ultima: '9.9.10', novidadesDe: '9.9.10' }) }); await espera(50);
-  ok('saiu outra mais nova (procura de 6 h): aparece sozinho, sem recarregar', !!f.quadro() && /Nova versão v9\.9\.10/.test(f.quadro().textContent));
-  esc(f); await espera(50);
-  ok('Esc também esconde', !f.quadro() && f.store.atualizacao.dispensada === '9.9.10');
+  ok('saiu outra mais nova (procura de 30 min): aparece na hora, sem recarregar, mesmo com a anterior adiada', !!f.quadro() && /Nova versão v9\.9\.10/.test(f.quadro().textContent));
+  await f.mudar({ atualizacao: Object.assign({}, f.store.atualizacao, { adiadoAte: 0 }) }); await espera(30);
+  const f2 = montar({ quadros: { tutorial: true, novidades: V }, atualizacao: Object.assign({}, f.store.atualizacao, { adiadoAte: 0 }) });
+  await espera(300);
+  ok('próxima abertura do navegador (o fundo zera o adiamento): aparece de novo', !!f2.quadro());
+  // checagens pedidas pela página: ao abrir e ao voltar para a aba (o fundo respeita o mínimo de 10 min)
+  ok('ao abrir a página: pede ao fundo para conferir os Releases (no máximo 1x a cada 10 min)', f2.msgs.some((m) => m.cmd === 'procurarAtualizacao' && m.seMaisVelhoQue === 600000));
+  const antes = f2.msgs.length;
+  f2.w.document.dispatchEvent(new f2.w.Event('visibilitychange'));
+  f2.w.dispatchEvent(new f2.w.Event('focus')); await espera(20);
+  ok('voltar para a aba também pede a conferência', f2.msgs.slice(antes).filter((m) => m.cmd === 'procurarAtualizacao').length >= 1);
+
+  // urgente: sem X, Esc não fecha, automação pausada
+  const stU = Object.assign({}, st, { urgente: true, ultima: '9.9.11' });
+  const u = montar({ quadros: { tutorial: true, novidades: V }, atualizacao: Object.assign({}, stU, { adiadoAte: Date.now() + 3600e3, adiadoVersao: '9.9.11' }) });
+  await espera(300);
+  ok('URGENTE: aparece mesmo adiado, com o aviso de pausa e sem X', !!u.quadro() && /Atualização urgente v9\.9\.11/.test(u.quadro().textContent) && /pausou/.test(u.quadro().textContent) && !u.sr().querySelector('.qd-x'));
+  esc(u); await espera(30);
+  ok('URGENTE: Esc não fecha', !!u.quadro());
+  ok('URGENTE: a automação da Plateia fica pausada', u.w.PLATEIA.pausado() === true);
+  // o baú não é clicado com a versão urgente pendente
+  const bt = u.w.document.createElement('button'); bt.innerHTML = '<div class="claimable-bonus__icon"></div>'; let cliques = 0; bt.onclick = () => cliques++;
+  u.w.document.body.appendChild(bt); await espera(2600);
+  ok('URGENTE: o baú não é pego', cliques === 0);
+  const tutU = montar({ quadros: { tutorial: true, novidades: '0.0.1' }, atualizacao: stU });
+  await espera(300);
+  ok('URGENTE passa na frente das novidades', !!tutU.quadro() && /urgente/i.test(tutU.quadro().textContent));
+  const n = montar({ quadros: { tutorial: true, novidades: V }, atualizacao: Object.assign({}, st) });
+  await espera(300);
+  await n.mudar({ atualizacao: stU }); await espera(50);
+  ok('Release normal vira urgente com a página aberta: o quadro troca para o urgente', !!n.quadro() && /urgente/i.test(n.quadro().textContent) && !n.sr().querySelector('.qd-x'));
+  const bt2 = n.w.document.createElement('button'); bt2.innerHTML = '<div class="claimable-bonus__icon"></div>'; let cl2 = 0; bt2.onclick = () => cl2++;
+  await n.mudar({ atualizacao: Object.assign({}, stU, { ultima: V, disponivel: false, urgente: false }) }); await espera(50);
+  ok('atualizou (Release não é mais mais novo): o quadro some e a automação volta', !n.quadro() && n.w.PLATEIA.pausado() === false);
+  n.w.document.body.appendChild(bt2); await espera(2600);
+  ok('depois de atualizar: o baú volta a ser pego', cl2 === 1);
   const g = montar({ quadros: { tutorial: true, novidades: V }, atualizacao: { disponivel: true, ultima: '9.9.9', notas: '### Install\ntexto\n\n- Item do release 1\n- Item do release 2' } });
   await espera(300);
   ok('sem changelog remoto: usa os itens do texto do Release', !!g.quadro() && /Item do release 1/.test(g.quadro().textContent));
@@ -105,6 +147,22 @@ const esc = (a) => a.w.document.dispatchEvent(new a.w.KeyboardEvent('keydown', {
   ok('ao abrir a sala, o quadro solto da página some', !j.host() && !!j.w.document.getElementById('plateia-sala'));
   const salaQd = j.w.document.getElementById('plateia-sala').shadowRoot.querySelector('.qd-fundo.leve .qd');
   ok('na sala o aviso de versão nova também aparece sozinho, sem fundo escuro', !!salaQd && /Nova versão v9\.9\.9/.test(salaQd.textContent));
+  // sala com Release urgente: quadro trava a sala, lives param
+  const k = montar({ atualizacao: Object.assign({}, st, { urgente: true }), quadros: { tutorial: true, novidades: V },
+    config: { canais: [{ login: 'canal1', mostrar: true, modo: 'fixo' }], v020: true, presencaChat: false } }, 'twitch');
+  const vivo = (w) => { w.document.cookie = 'auth-token=tok'; w.document.cookie = 'login=eu';
+    w.fetch = async (url, o) => { const q = (JSON.parse((o && o.body) || '{}').query) || ''; const data = {};
+      q.replace(/c(\d+):user\(login:"(\w+)"\)/g, (_, i, l) => { data['c' + i] = { login: l, displayName: l, stream: { id: 1, viewersCount: 5, game: { displayName: 'J' } }, channel: { self: { communityPoints: { balance: 10 } } } }; });
+      return { ok: true, status: 200, json: async () => ({ data }), text: async () => JSON.stringify({ data }) }; }; };
+  vivo(k.w);
+  const ctl = montar({ atualizacao: Object.assign({}, st), quadros: { tutorial: true, novidades: V },
+    config: { canais: [{ login: 'canal1', mostrar: true, modo: 'fixo' }], v020: true, presencaChat: false } }, 'twitch');
+  vivo(ctl.w); ctl.w.location.hash = '#plateia'; await espera(600);
+  ok('controle: sem urgência a live fixa toca na sala', !!ctl.w.document.getElementById('plateia-sala').shadowRoot.querySelector('.palco iframe'));
+  k.w.location.hash = '#plateia'; await espera(600);
+  const srK = k.w.document.getElementById('plateia-sala').shadowRoot;
+  ok('sala com Release URGENTE: quadro com fundo escuro, sem X', !!srK.querySelector('.qd-fundo.urgente .qd') && !srK.querySelector('.qd-fundo.urgente .qd-x'));
+  ok('sala com Release URGENTE: nenhuma live tocando e chip de pausa', !srK.querySelector('.palco iframe') && /Pausada: atualização urgente/.test(srK.querySelector('.chips').textContent));
 
   // 7) dentro de iframe (lives da sala): nada
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTUDO PASSOU');

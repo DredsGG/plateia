@@ -57,6 +57,11 @@ const ok = (n, v) => { res.push(v); console.log((v ? 'OK  ' : 'FALHOU ') + n); }
   const k = montar({ atualizacao: { instalacaoNova: true } }, 'kick');
   await espera(600);
   ok('sala da Kick: tutorial próprio e botão "Como usar"', !!k.quadro() && /Como usar a sala da Kick/.test(k.quadro().textContent) && !!k.sr().querySelector('.qd-ajuda'));
+  // 6) quem pulou versões (viu a 0.7.0, instalou a atual): novidades de cada versão do meio
+  const e = montar({ quadros: { tutorial: true, novidades: '0.7.0' } });
+  await espera(400);
+  const grupos = e.quadro() ? [...e.sr().querySelectorAll('.qd-grupo')].map((g) => g.textContent) : [];
+  ok('pulou versões: novidades da atual e das do meio (sem a já vista)', grupos[0] === 'v' + V && grupos.includes('v0.8.0') && !grupos.includes('v0.7.0'), grupos.join(','));
   ok('changelog em pt, en e es para a versão atual', !!(a.w.PLATEIA.CHANGELOG.pt[V] && a.w.PLATEIA.CHANGELOG.en[V] && a.w.PLATEIA.CHANGELOG.es[V]));
   console.log(res.every(Boolean) ? 'TUDO PASSOU' : 'FALHOU');
   process.exit(res.every(Boolean) ? 0 : 1);

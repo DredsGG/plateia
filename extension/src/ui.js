@@ -234,7 +234,7 @@
   .qd{position:relative;width:min(460px,100%);max-height:calc(100% - 40px);overflow:auto;padding:20px 22px 18px;background:var(--painel);border:1px solid var(--linha);border-radius:12px;box-shadow:0 24px 64px rgba(0,0,0,.55);color:var(--texto)}
   .qd-x{position:absolute;top:10px;right:10px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:var(--r-bt);background:transparent;color:var(--suave);cursor:pointer}
   .qd-x:hover{background:var(--sec);color:var(--texto)}
-  .qd-tit{display:flex;align-items:center;gap:10px;margin:0 30px 14px 0;font:700 15px var(--titulo);color:var(--suave)}
+  .qd-tit{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 30px 14px 0;font:700 15px var(--titulo);color:var(--suave)}
   .qd-passo{color:var(--cor);font-weight:700;font-size:12px}
   .qd h3{margin:4px 0 8px;font:700 19px var(--titulo);letter-spacing:-.01em}
   .qd p{margin:0;color:var(--suave);font-size:14px;line-height:1.6}
@@ -253,21 +253,28 @@
   .qd-fundo.leve{background:none;pointer-events:none}
   .qd-fundo.leve .qd{pointer-events:auto;box-shadow:0 18px 48px rgba(0,0,0,.6),0 0 0 1px var(--linha)}
   .solto .qd{pointer-events:auto;width:min(420px,100%);box-shadow:0 18px 48px rgba(0,0,0,.6),0 0 0 1px var(--linha)}
-  .qd-ver{color:var(--apagado);font-weight:600;font-size:12.5px}
+  .qd-ver{color:var(--apagado);font-weight:600;font-size:12.5px;white-space:nowrap}
+  .qd-urg{border-color:var(--alerta);box-shadow:0 0 0 1px var(--alerta),0 24px 64px rgba(0,0,0,.6)}
+  .qd-urg .qd-tit b{color:var(--alerta)}
+  .qd-alerta{margin:0 0 12px!important;padding:9px 11px;border-radius:8px;background:var(--alerta-tinta);color:var(--texto)!important;font-size:13px!important}
+  .qd-grupo{margin:14px 0 2px;color:var(--cor);font-weight:700;font-size:12px}
+  .qd-grupo.primeiro{margin-top:0}
   .qd-dica{margin:12px 0 0!important;font-size:12.5px!important}
   .qd-dica a{color:var(--link)}
   .qd-q{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;font-weight:800;font-size:11px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
   `;
 
-  const cmpVersao = (a, b) => {
-    const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0), pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0 ? 1 : -1; }
-    return 0;
+  const cmpVersao = (a, b) => P.cmpVersao(a, b);
+  const salvarAtualizacao = async (patch) => {
+    try { const r = await P.ext.storage.local.get('atualizacao'); await P.ext.storage.local.set({ atualizacao: Object.assign({}, r.atualizacao || {}, patch) }); } catch (e) {}
   };
-  const salvarDispensa = async (versao) => {
-    try { const r = await P.ext.storage.local.get('atualizacao'); await P.ext.storage.local.set({ atualizacao: Object.assign({}, r.atualizacao || {}, { dispensada: versao }) }); } catch (e) {}
-  };
+  // Regra 14: o X só adia. O aviso volta depois de 1 h ou na próxima abertura do navegador (o fundo zera o adiamento).
+  P.ADIAR_MS = 3600e3;
+  const adiar = (versao) => salvarAtualizacao({ adiadoAte: Date.now() + P.ADIAR_MS, adiadoVersao: versao });
+  const desadiar = () => salvarAtualizacao({ adiadoAte: 0 });
+  const adiada = (st) => !!(st && st.adiadoAte && st.adiadoAte > Date.now() && st.adiadoVersao === st.ultima);
+  const deveAvisar = (st) => P.versaoNova(st) && (!!st.urgente || !adiada(st));
   // ---------- Tutorial de primeiro uso e Novidades (regra 12) ----------
   const TUTORIAL = {
     twitch: [
@@ -287,7 +294,7 @@
   };
   const quadros = (opts) => {
     let aberto = null;
-    const esc = (e) => { if (e.key === 'Escape' && aberto) { e.stopPropagation(); e.preventDefault(); aberto.fechar(); } };
+    const esc = (e) => { if (e.key === 'Escape' && aberto && aberto.fechar) { e.stopPropagation(); e.preventDefault(); aberto.fechar(); } };
     const fechar = async (marcar) => {
       if (!aberto) return;
       aberto.el.remove(); aberto = null;
@@ -295,13 +302,14 @@
       if (marcar) await marcar();
     };
     const marcarVisto = async () => { const q = (await P.ler('quadros', null)) || {}; q.tutorial = true; q.novidades = P.versao(); await P.gravar('quadros', q); };
+    // fecharFn null = quadro sem X e sem Esc (versão urgente)
     const montar = (conteudo, fecharFn) => {
-      const fundo = h('div', { class: 'qd-fundo' + (montar.tipo === 'versao' ? ' leve' : ''), onclick: (e) => { if (e.target === fundo) fecharFn(); } },
-        h('div', { class: 'qd', role: 'dialog', 'aria-modal': opts.solto ? 'false' : 'true' },
-          h('button', { class: 'qd-x', title: tr('Fechar (Esc)'), 'aria-label': tr('Fechar'), onclick: fecharFn }, icone('x', 14)),
+      const fundo = h('div', { class: 'qd-fundo' + (montar.tipo === 'versao' ? ' leve' : '') + (montar.tipo === 'urgente' ? ' urgente' : ''), onclick: (e) => { if (e.target === fundo && fecharFn) fecharFn(); } },
+        h('div', { class: 'qd' + (montar.tipo === 'urgente' ? ' qd-urg' : ''), role: 'dialog', 'aria-modal': opts.solto ? 'false' : 'true' },
+          fecharFn ? h('button', { class: 'qd-x', title: tr('Fechar (Esc)'), 'aria-label': tr('Fechar'), onclick: fecharFn }, icone('x', 14)) : null,
           ...conteudo));
       opts.app.appendChild(fundo);
-      aberto = { el: fundo, fechar: fecharFn, tipo: montar.tipo };
+      aberto = { el: fundo, fechar: fecharFn, tipo: montar.tipo, versao: montar.versao };
       document.addEventListener('keydown', esc, true);
     };
     const abrirTutorial = async () => {
@@ -329,34 +337,46 @@
       montar.tipo = 'tutorial';
       montar([h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr(opts.sala === 'kick' ? 'Como usar a sala da Kick' : 'Como usar a sala da Twitch'))), corpo], fim);
     };
-    const abrirNovidades = (v) => {
+    // novidades da versão atual; com `desde` (última vista), também as das versões puladas no meio
+    const gruposNovidades = (v, desde) => {
       const cl = P.CHANGELOG || {};
-      const itens = (cl[P.idioma] && cl[P.idioma][v]) || (cl.en && cl.en[v]) || (cl.pt && cl.pt[v]) || [];
-      if (!itens.length) return false;
+      const doIdioma = (x) => (cl[P.idioma] && cl[P.idioma][x]) || (cl.en && cl.en[x]) || (cl.pt && cl.pt[x]) || [];
+      const todas = [...new Set([].concat(...Object.values(cl).map((o) => Object.keys(o || {}))))];
+      const vs = desde && cmpVersao(desde, v) < 0
+        ? todas.filter((x) => cmpVersao(x, v) <= 0 && cmpVersao(x, desde) > 0).sort((a, b) => cmpVersao(b, a)).slice(0, 4) : [v];
+      return vs.map((x) => [x, doIdioma(x)]).filter(([, l]) => l.length);
+    };
+    const abrirNovidades = (v, desde) => {
+      const grupos = gruposNovidades(v, desde);
+      if (!grupos.length || grupos[0][0] !== v) return false;
       fechar();
       const fim = () => fechar(marcarVisto);
       montar.tipo = 'novidades';
       montar([
         h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr('Novidades da v{v}', { v }))),
-        h('ul', { class: 'qd-lista' }, ...itens.map((t) => h('li', {}, t))),
+        ...grupos.map(([x, itens], k) => [
+          grupos.length > 1 ? h('div', { class: 'qd-grupo' + (k ? '' : ' primeiro') }, 'v' + x) : null,
+          h('ul', { class: 'qd-lista' }, ...itens.map((t) => h('li', {}, t)))]).flat(),
         h('div', { class: 'qd-bts' },
           h('button', { class: 'qd-bt sec', onclick: () => fechar(marcarVisto).then(abrirTutorial) }, tr('Ver o tutorial')),
           h('span', { class: 'qd-esp' }),
           h('button', { class: 'qd-bt qd-ok', onclick: fim }, tr('Entendi')))], fim);
       return true;
     };
-    // aviso de versão nova (regra 14): resumo do que mudou + Atualizar; o X esconde até sair outra mais nova
-    const temNova = (st) => !!(st && st.disponivel && st.ultima && st.dispensada !== st.ultima && cmpVersao(st.ultima, P.versao()) > 0);
+    // aviso de versão nova (regra 14): resumo do que mudou + Atualizar. O X adia 1 h; versão urgente não tem X.
     const abrirNovaVersao = (st) => {
-      if (!temNova(st)) return false;
+      if (!deveAvisar(st)) return false;
+      const urgente = P.urgentePendente(st);
       fechar();
-      const dispensar = () => fechar(() => salvarDispensa(st.ultima));
+      const adiarEFechar = () => fechar(() => adiar(st.ultima));
       const nov = st.novidades || {};
       const itens = (nov[P.idioma] && nov[P.idioma].length ? nov[P.idioma] : nov.en && nov.en.length ? nov.en : nov.pt && nov.pt.length ? nov.pt : notasEmItens(st.notas)).slice(0, 6);
       const dica = h('p', { class: 'qd-dica', style: 'display:none' });
-      montar.tipo = 'versao';
+      montar.tipo = urgente ? 'urgente' : 'versao';
+      montar.versao = st.ultima;
       montar([
-        h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr('Nova versão v{v}', { v: st.ultima })), h('span', { class: 'qd-ver' }, tr('você tem a v{v}', { v: P.versao() }))),
+        h('div', { class: 'qd-tit' }, logo(22), h('b', {}, urgente ? tr('Atualização urgente v{v}', { v: st.ultima }) : tr('Nova versão v{v}', { v: st.ultima })), h('span', { class: 'qd-ver' }, tr('você tem a v{v}', { v: P.versao() }))),
+        urgente ? h('p', { class: 'qd-alerta' }, tr('Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.')) : null,
         itens.length ? h('ul', { class: 'qd-lista' }, ...itens.map((t) => h('li', {}, t))) : h('p', {}, tr('Versão nova da Plateia disponível no GitHub.')),
         dica,
         h('div', { class: 'qd-bts' },
@@ -371,7 +391,7 @@
               : r && r.modo === 'loja' ? (r.status === 'aplicando' ? tr('Atualizando…') : tr('O navegador ainda não liberou a versão nova. Tente de novo mais tarde.'))
               : tr('Não deu para atualizar agora. Use "Como atualizar".');
             dica.textContent = txt; dica.style.display = '';
-          } }, tr('Atualizar')))], dispensar);
+          } }, tr('Atualizar')))], urgente ? null : adiarEFechar);
       return true;
     };
     // instalação nova: só o tutorial; atualização: só as novidades (uma vez por versão); senão, versão nova
@@ -379,8 +399,9 @@
       const v = P.versao();
       const q = await P.ler('quadros', null);
       const at = (await P.ler('atualizacao', null)) || {};
+      if (opts.avisarVersao !== false && P.urgentePendente(at)) { abrirNovaVersao(at); return; } // urgente passa na frente
       if (q && q.tutorial) {
-        if (q.novidades !== v && !abrirNovidades(v)) await marcarVisto();
+        if (q.novidades !== v && !abrirNovidades(v, q.novidades)) await marcarVisto();
         if (!aberto && opts.avisarVersao !== false) abrirNovaVersao(at);
         return;
       }
@@ -394,14 +415,22 @@
         const q = m.quadros.newValue || {};
         if (q.tutorial && q.novidades === P.versao()) fechar();
       }
-      if (m.atualizacao) {
-        const st = m.atualizacao.newValue || {};
-        if (aberto && aberto.tipo === 'versao' && !temNova(st)) fechar();
-        else if (!aberto && opts.avisarVersao !== false && temNova(st) && !temNova(m.atualizacao.oldValue)) abrirNovaVersao(st);
-      }
+      if (m.atualizacao) avaliar(m.atualizacao.newValue || {});
     });
+    // achou versão nova (ou o adiamento acabou): aparece na hora, sem recarregar a página
+    const avaliar = (st) => {
+      if (parado || opts.avisarVersao === false) return;
+      const deVersao = aberto && (aberto.tipo === 'versao' || aberto.tipo === 'urgente');
+      if (deVersao) {
+        if (!deveAvisar(st)) fechar();
+        else if (aberto.versao !== st.ultima || (aberto.tipo === 'urgente') !== P.urgentePendente(st)) abrirNovaVersao(st);
+      } else if (deveAvisar(st) && (!aberto || P.urgentePendente(st))) abrirNovaVersao(st);
+    };
+    // relógio: o aviso adiado volta sozinho quando passa 1 h
+    const tique = () => { if (!aberto) avaliar(P.atualizacao || {}); };
+    const relogio = setInterval(tique, 15000);
     const botao = h('button', { class: 'bt fantasma qd-ajuda', title: tr('Como usar a sala'), 'aria-label': tr('Como usar'), onclick: abrirTutorial }, h('span', { class: 'qd-q' }, '?'), tr('Como usar'));
-    return { botao, abrirTutorial, abrirNovidades, abrirNovaVersao, checar, aberto: () => (aberto ? aberto.tipo : null), parar: () => { parado = true; fechar(); } };
+    return { botao, abrirTutorial, abrirNovidades, abrirNovaVersao, checar, tique, aberto: () => (aberto ? aberto.tipo : null), parar: () => { parado = true; clearInterval(relogio); fechar(); } };
   };
   // ---------- Avisos na página do site (regra 14): tutorial, novidades e versão nova sem abrir a sala ----------
   const avisosSite = async (opts) => {
@@ -502,10 +531,10 @@
     const desenhar = () => {
       const agora = Date.now();
       const v = P.versao();
-      const temNova = st.disponivel && st.ultima && st.dispensada !== st.ultima;
+      const temNova = deveAvisar(st);
       const recente = st.acabouDeAtualizar && agora - st.acabouDeAtualizar.em < 30 * 60000 && st.acabouDeAtualizar.para === v;
       const status = procurando ? tr('Procurando…') : st.erro && !st.ultima ? tr('Não deu para procurar agora')
-        : st.disponivel ? h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); salvarDispensa(null); } }, tr('v{v} disponível', { v: st.ultima }))
+        : P.versaoNova(st) ? h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); desadiar(); } }, tr('v{v} disponível', { v: st.ultima }))
         : st.ultima ? tr('Você está na versão mais nova') : '';
       repor(caixa,
         recente ? h('div', { class: 'upd-ok' }, tr('Plateia atualizada: v{de} → v{para}', { de: st.acabouDeAtualizar.de || '?', para: st.acabouDeAtualizar.para })) : null,
@@ -518,7 +547,7 @@
             h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }); } }, tr('Como fazer'))) : null,
           h('div', { class: 'upd-bts' },
             h('button', { class: 'upd-bt', onclick: async () => { const r = await enviar({ cmd: 'aplicarAtualizacao' }); baixou = !!(r && r.modo === 'download'); desenhar(); } }, tr('Atualizar')),
-            h('button', { class: 'upd-bt sec', onclick: () => salvarDispensa(st.ultima) }, tr('Depois')))) : null,
+            P.urgentePendente(st) ? null : h('button', { class: 'upd-bt sec', onclick: () => adiar(st.ultima) }, tr('Depois')))) : null,
         bug.caixa,
         h('div', { class: 'upd-linha' },
           h('button', { class: 'upd-proc' + (procurando ? ' girando' : ''), title: tr('Procurar versão nova no GitHub'), onclick: procurar }, h('span', { class: 'upd-ic' }, '↻'), tr('Procurar atualização')),
@@ -582,7 +611,7 @@
   const marcarNovidade = async (botao) => {
     await P.idiomaPronto;
     const aplicar = (st) => {
-      const nova = !!(st && st.disponivel && st.ultima && st.dispensada !== st.ultima);
+      const nova = P.versaoNova(st);
       botao.classList.toggle('nova', nova);
       if (nova) botao.title = tr('Plateia v{v} disponível: abra a sala para atualizar', { v: st.ultima });
     };

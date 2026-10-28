@@ -10,11 +10,11 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.8.0-9146FF)
-![Tests](https://img.shields.io/badge/tests-147%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.9.0-9146FF)
+![Tests](https://img.shields.io/badge/tests-193%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+
+**Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
 
 <img src="docs/plateia-twitch-room.png" width="900" alt="Plateia Twitch room: header with live counters (live, in chat, earning 2/2, next swap, points and chests gained, PokeIdle bonus) and a How to use button; on the left the Channels, PokeIdle and Settings tabs, a PokeIdle summary and the channel list split into Earning now, Live waiting and Offline, each channel with status, tags and Fixed / Rotation / Chat only modes; on the right the two lives that are earning points">
 
@@ -62,16 +62,21 @@ Kick has no chest to click: points drop by themselves (10 every 5 minutes watche
 
 <sub>Kick room and PokeIdle tab with demo data (simulated Kick and PokeIdle, made-up names).</sub>
 
-### First-run tutorial and what's new
+### Tutorial, what's new and update notices
 
-<img src="docs/plateia-tutorial.png" width="900" alt="First-run tutorial over the Twitch room: a dialog 'Como usar a sala da Twitch', step 2 of 5 'Seus canais', explaining how to add channels and the Fixed, Rotation and Chat only modes, with Skip, Back and Next buttons">
+They show up by themselves, centered on the Twitch or Kick page you're on: no need to open the room or click the extension icon. They don't darken or block the page, and they close with the X or Esc.
 
-<img src="docs/plateia-novidades.png" width="360" alt="What's new dialog in the Kick room: 'Novidades da v0.7.0' with a short list of changes and the buttons See the tutorial and Got it">
+<img src="docs/plateia-tutorial.png" width="900" alt="First-run tutorial on a Twitch channel page: a small centered dialog 'How to use the Twitch room', step 2 of 5 'Your channels', explaining how to add channels and the Pinned, Rotation and Chat only modes, with Skip, Back and Next buttons; the stream stays visible around it">
 
-- The first time a room opens, a short tutorial (5 steps per room) explains each part, with **Pular** (skip) and **Entendi** (got it). It doesn't come back by itself, but **? Como usar** at the top reopens it.
-- After an update, the first time a room opens shows **Novidades da vX.Y.Z** (what's new) once per version. The texts live in `extension/src/changelog/` (Portuguese and English) and are updated on every version.
-- Both close with the X or Esc and never pause anything that's running.
-- **On any Twitch or Kick page, not only inside the rooms** (since v0.8.0): the tutorial on a fresh install, *What's new in vX.Y.Z* once per version, and *New version vX.Y.Z* with a short summary and an **Update** button show up by themselves as a small box in the middle of the screen, with no dark overlay and without blocking clicks on the site.
+- **First run** in a browser: a short tutorial (5 steps for each site), with **Skip** and **Got it**, plus **Open the room** on the last step. It doesn't come back by itself; **? How to use** at the top of the room reopens it.
+- **After an update**, the first page you open shows **What's new in vX.Y.Z**, once per version (if you skipped versions, it lists each one). The texts live in `extension/src/changelog/` (`pt.js`, `en.js`, `es.js`) and are updated on every version.
+
+<img src="docs/plateia-novidades.png" width="360" alt="What's new dialog on a Kick page: 'What's new in v0.9.0' with a short list of changes and the buttons See the tutorial and Got it">
+
+- **New version on GitHub**: a **New version vX.Y.Z** box with what changed (read from that release's changelog, in your language) and an **Update** button that does the right thing for your browser. It appears the moment Plateia finds the release, on the page you already have open, no reload. The X only snoozes it: it comes back after 1 hour or the next time you open the browser, until you update.
+- **Urgent version**: when a release title has **URGENTE**, the box has no X and Plateia pauses its automation (chests, Drops, Kick redemptions, the room's streams and chat) until you update.
+
+<img src="docs/plateia-new-version.png" width="900" alt="New version notice centered on a Twitch channel page: 'New version v0.9.1, you have v0.9.0', two short lines about what changed, and the buttons How to update and Update">
 
 ## How it was measured
 
@@ -90,16 +95,21 @@ Before writing the room I measured how Twitch actually behaves, on a live accoun
 extension/
 ├── manifest.json            MV3 for every browser: background as service_worker (Chromium) and scripts (Firefox),
 │                            browser_specific_settings.gecko (id plateia@dredsgg, Firefox 140+, no data collection, update_url)
-├── COMO-INSTALAR.html       install / use / update guide (PT and EN) with a browser picker, opens on first install
-├── src/fundo.js             background: update check against this repo's releases, reload when the folder changes,
+├── COMO-INSTALAR.html       install / use / update guide (PT, EN and ES) with a browser picker, opens on first install
+├── src/fundo.js             background: update check against this repo's releases (plus that release's changelog),
+│                            reload when the folder changes,
 │                            site-permission check (Firefox lets users turn it off)
-├── src/comum.js             shared: browser/chrome API, default settings, storage, cookie login, page-like fetch, GQL helper
+├── src/comum.js             shared: browser/chrome API, language (detect, switch, translate), settings, storage, cookie login,
+│                            page-like fetch, GQL helper
+├── src/i18n/                English and Spanish texts (en.js, es.js), keyed by the Portuguese text
+├── _locales/                extension description in each language
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
-├── src/ui.js                shared UI and the room style per site: logo, icons, tutorial and what's new, update card,
-│                            bug report, footer signature
-├── src/changelog/           what's new per version (pt.js, en.js)
+├── src/ui.js                shared UI and the room style per site: logo, icons, tutorial, what's new and new-version
+│                            notices (on the site page and in the room), update card, bug report, footer signature,
+│                            language selector
+├── src/changelog/           what's new per version (pt.js, en.js, es.js)
 ├── src/pokeidle-painel.js   the PokeIdle tab used by both rooms
 ├── src/pokeidle-ponte.js    pokeidle.io, page world: reads the game's twitch and kick blocks from its WebSocket (read only)
 ├── src/pokeidle-guarda.js   pokeidle.io: stores those blocks for the rooms
@@ -115,15 +125,15 @@ extension/
 
 ## Updates
 
-<img src="docs/plateia-rodape.png" width="720" alt="Room footer in Twitch and Kick: the Relatar bug (report a bug) card open with 'What happened?', the diagnostic that goes along (version, room, browser, counts, no account data) and the buttons Open on GitHub, Copy report and Close; below it the Procurar atualização (check for updates) and Relatar bug buttons">
+<img src="docs/plateia-rodape.png" width="720" alt="Room footer in Twitch and Kick (Portuguese UI): the Report bug card open with 'What happened?', the diagnostic that goes along (version, room, browser, counts, no account data) and the buttons Open on GitHub, Copy report and Close; below it the Check for updates and Report bug buttons">
 
-Plateia checks this repo's latest release when Chrome starts, every 6 hours and when you press **↻ Procurar atualização** (check for updates) in either room. A new version shows a gold card with the release notes and a gold dot on the Plateia button. **Atualizar** (update) downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running). **Depois** (later) hides the card until the next version. The **i** button opens the install and update guide.
+While Twitch or Kick is open, Plateia checks this repo's latest release by itself: when the browser starts, when a page opens, every 30 minutes, and whenever you come back to the tab (at most once every 10 minutes). **↻ Check for updates** in either room is only a backup. A new version shows the **New version** box on the Twitch or Kick page (see above), a gold card in the room footer and a gold dot on the Plateia button. **Update** downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running). **Later** in the room card (or the X on the box) snoozes it for 1 hour. The **i** button opens the install and update guide.
 
 On Firefox, a signed `.xpi` updates itself through `firefox/updates.json` (the manifest's `update_url`). The temporary install (see below) has to be loaded again with the new zip.
 
 ## Reporting a bug
 
-**Relatar bug** (report a bug), in the footer of both rooms next to the update check, opens a prefilled issue in this repo with the version and a short diagnostic: browser, room, counts and on/off states only (no account name, token or channel names). You can read exactly what goes along before sending, or use **Copiar relatório** (copy report) instead.
+**Report bug**, in the footer of both rooms next to the update check, opens a prefilled issue in this repo with the version and a short diagnostic: browser, room, counts and on/off states only (no account name, token or channel names). You can read exactly what goes along before sending, or use **Copy report** instead.
 
 ## Install
 
@@ -135,7 +145,7 @@ One package for every browser. Get it from the [latest release](https://github.c
 2. Open the extensions page: `chrome://extensions`, `edge://extensions`, `brave://extensions` or `opera://extensions`.
 3. Turn on **Developer mode** (top right; on Edge it's in the left column) and keep it on: the self-reload after an update needs it.
 4. Click **Load unpacked** and pick that folder. From a clone of this repo, load the `extension/` folder.
-5. To update, extract the new version over the same folder, or press **Atualizar** in the room's update card.
+5. To update, extract the new version over the same folder, or press **Update** on the new-version box or in the room's update card.
 
 On **Opera GX**, if Plateia disappears after you close the browser (a known Opera issue with unpacked extensions), just load the folder again.
 
@@ -154,13 +164,16 @@ If the Plateia button doesn't show up, open `about:addons` → Plateia → **Per
 
 ### After installing
 
-Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purple on Twitch, green on Kick). For PokeIdle, reload the game tab once so Plateia can read the official channels. `COMO-INSTALAR.html` (opens on first install, Portuguese and English) has the same steps with a browser picker.
+Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purple on Twitch, green on Kick). For PokeIdle, reload the game tab once so Plateia can read the official channels. `COMO-INSTALAR.html` (opens on first install, in Portuguese, English and Spanish) has the same steps with a browser picker.
 
 ## Languages
 
-- Since v0.8.0 everything (rooms, tutorial, what's new, update notices, footer) is in **Portuguese, English and Spanish**. The first run follows the browser language (pt-*, es-*, en-*; anything else falls back to English) and a **PT · EN · ES** selector in the room footer switches it on the spot.
-- Plateia keeps its own dictionary (`extension/src/i18n/en.js`, `es.js`) keyed by the Portuguese text, because `chrome.i18n` can't switch language while the extension is running. The changelog has the three languages in `extension/src/changelog/`.
-- The install and update guide (`COMO-INSTALAR.html`) has flag buttons to switch language.
+<img src="docs/plateia-languages.png" width="400" alt="Room footer in Spanish: Buscar actualización and Reportar bug buttons, 'hecho por Dreds · v0.9.0' and the PT · EN · ES language selector with ES selected">
+
+- Everything is in **Portuguese, English and Spanish**: both rooms, the footer, the tutorial, what's new, the new-version box, warnings, the bug report and the install guide.
+- The first time, Plateia uses your browser language (any other language falls back to English). Switch it any time with **PT · EN · ES** in the room footer, or the flags in the install guide; the choice is saved and shared by both.
+- Plateia keeps its own dictionary (`extension/src/i18n/en.js`, `es.js`) keyed by the Portuguese text, because `chrome.i18n` can't switch language while the extension is running.
+- New text goes into all three at once: `teste-idiomas.cjs` fails if any UI string is missing a translation.
 
 ## Known limitations
 
@@ -176,17 +189,19 @@ Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purp
 ```bash
 cd tests && npm i jsdom
 node teste-sala.cjs         # Twitch room logic in jsdom: 30/30
-node teste-kick.cjs         # Kick room: bundle, order, guard rails, PokeIdle summary, Daily Reward, Drops, tab, bug report: 18/18
+node teste-kick.cjs         # Kick room: bundle, order, guard rails, PokeIdle summary, Daily Reward, Drops, tab, bug report, urgent pause: 21/21
 node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
 node teste-rodape.cjs       # footer: update check, bug report without personal data, signature: 10/10
-node teste-quadros.cjs      # first-run tutorial and what's new, both rooms: 13/13
-node teste-avisos.cjs       # tutorial / what's new / new version on the site page, never blocking clicks: 22/22
-node teste-idiomas.cjs      # every text in en and es, language detection, both rooms in pt/en/es: 35/35
+node teste-quadros.cjs      # first-run tutorial and what's new (skipped versions too), both rooms: 14/14
+node teste-avisos.cjs       # notices on the Twitch/Kick page: tutorial, what's new, new version, X snoozes 1 h, urgent pause: 38/38
+node teste-fundo.cjs        # background: 30-min check, 10-min floor for page requests, URGENTE releases, snooze reset: 10/10
+node teste-idiomas.cjs      # every UI string in en/es, browser-language detection, both rooms in pt/en/es, selector: 35/35
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10
-node e2e-regra14.mjs /path/to/copy-of-extension /path/to/screenshots pt-BR   # notices on the page and the language selector, per browser language (pt-BR, en-US, es, fr)
+node e2e-regra14.mjs ../extension /tmp <pt-BR|en-US|es|fr>   # notices and languages in real Chromium, per browser language: 19 checks each
+node e2e-insistente.mjs /path/to/copy-of-extension /tmp     # page already open: new release, snooze and return, back-to-tab check, URGENTE pause until updated: 16/16
 
 # Firefox: Mozilla's linter, self-distribution rules (0 errors)
 npx web-ext lint --source-dir ../extension --self-hosted

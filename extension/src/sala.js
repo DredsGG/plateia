@@ -312,7 +312,7 @@
           if (!d.self || d.self.isClaimed) continue;
           drops.push({ campanha: c.name, nome: d.name, min: d.self.currentMinutesWatched, req: d.requiredMinutesWatched, id: d.self.dropInstanceID, ok: d.self.hasPreconditionsMet });
         }
-        for (const d of drops) if (d.ok && d.req && d.min >= d.req) await resgatarDrop(d);
+        for (const d of drops) if (d.ok && d.req && d.min >= d.req && !P.pausado()) await resgatarDrop(d);
       } catch (e) { /* tenta na próxima */ }
       renderDrops();
     }
@@ -386,7 +386,7 @@
     }
 
     function aplicarVagas() {
-      const alvo = escolherVagas();
+      const alvo = P.pausado() ? [] : escolherVagas(); // versão urgente: lives param até atualizar
       for (const [login, fr] of iframes) if (!alvo.includes(login)) { fr.remove(); iframes.delete(login); }
       for (const login of alvo) {
         if (iframes.has(login)) continue;
@@ -418,7 +418,7 @@
     const noChat = new Set(), pedidos = new Map(); // pedidos: canal -> hora do JOIN (sem resposta em 30 s, pede de novo)
     let ultimaMsgIrc = 0;
     function conectarIRC() {
-      if (!cfg.presencaChat || irc) return;
+      if (!cfg.presencaChat || irc || P.pausado()) return;
       const tok = P.token(), eu = P.meuLogin();
       if (!tok || !eu) { ircErro = tr('sem login'); return; }
       irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
@@ -440,14 +440,14 @@
       };
       irc.onclose = () => {
         irc = null; ircPronto = false; noChat.clear(); pedidos.clear(); renderLeve();
-        if (!salaAtiva || !cfg.presencaChat) return;
+        if (!salaAtiva || !cfg.presencaChat || P.pausado()) return;
         const espera = Math.min(300000, 5000 * Math.pow(2, ircTent++));
         clearTimeout(ircTimer); ircTimer = setTimeout(conectarIRC, espera);
       };
     }
     let filaJoin = [], joinTimer = null;
     function sincronizarChat() {
-      if (!cfg.presencaChat) { if (irc) irc.close(); return; }
+      if (!cfg.presencaChat || P.pausado()) { if (irc) irc.close(); return; }
       if (!irc) return conectarIRC();
       if (!ircPronto) return;
       const quero = new Set(cfg.canais.map((c) => c.login).filter(P.loginValido));
@@ -490,6 +490,7 @@
         chip(tr('+{p} pts · {b} baús', { p: fmt(ganho), b: nBaus }), 'ok', tr('Pontos ganhos e baús pegos desde que a sala abriu')),
         pk && pk.vinculado && pkVivos.length ? chip(`PokeIdle${pkPct() ? ' ' + pkPct() : ''} · ` + tr('te vê {a}/{b}', { a: pkVe, b: pkVivos.length }), pkVe ? 'ok' : 'alerta',
           tr('Em quantos canais oficiais ao vivo o PokeIdle já te reconheceu / canais oficiais com bônus ao vivo. O jogo confere de tempos em tempos')) : null,
+        P.pausado() ? chip(tr('Pausada: atualização urgente'), 'alerta', tr('Atualize a Plateia para voltar a pegar pontos, baú e Drops')) : null,
         erroGql ? chip('Twitch: ' + erroGql, 'alerta', tr('A consulta de dados à Twitch falhou; a sala tenta de novo a cada minuto')) : null);
       renderPokeidle();
     }
@@ -641,7 +642,9 @@
       if (m.dropsResgatados) { dropsResgatados = m.dropsResgatados.newValue || []; renderDrops(); }
       if (m.pokeidle) { pk = m.pokeidle.newValue || null; sincronizarPokeidle(); renderLeve(); }
       if (m.pokeidleKick) { pkk = m.pokeidleKick.newValue || null; renderPokeidle(); }
+      if (m.atualizacao) { const p = P.urgentePendente(m.atualizacao.newValue); if (p !== pausadaAgora) { pausadaAgora = p; aplicarVagas(); sincronizarChat(); renderLeve(); } }
     });
+    let pausadaAgora = P.pausado();
 
     function fecharSala() {
       salaAtiva = false;

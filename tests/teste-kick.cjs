@@ -9,8 +9,9 @@ let falhas = 0;
 const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') + n); if (!c) falhas++; };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function montar({ vinculado = true, saldos, recompensas3 = true, diariaProg = 60, dropConectado = true }) {
-  const store = { idioma: 'pt' }, ouvintes = [];
+async function montar({ vinculado = true, saldos, recompensas3 = true, diariaProg = 60, dropConectado = true, urgente = false }) {
+  const store = { idioma: 'pt', quadros: { tutorial: true, novidades: manifest.version } }, ouvintes = [];
+  if (urgente) store.atualizacao = { disponivel: true, ultima: '99.0.0', urgente: true };
   store.pokeidleKick = { vinculado, login: 'dredsgg', pct: 0, minutos: 60, em: Date.now(),
     bonus: { xp: Date.now() + 80 * 60000, captura: 0, shiny: 0 },
     oficiais: [{ slug: 'matta', nome: 'matta', aoVivo: true, ativo: true }, { slug: 'yoda', nome: 'yoda', aoVivo: true, ativo: true }, { slug: 'jukes', nome: 'jukes', aoVivo: true, ativo: true }, { slug: 'offline1', nome: 'off', aoVivo: false, ativo: true }],
@@ -100,6 +101,17 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   await c.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, c.store.pokeidleKick, { em: Date.now() + 1 }) });
   await espera(1500);
   ok('pacote incompleto (sem Lure): nenhum resgate', !c.chamadas.some((x) => x.u.includes('/redeem')));
+
+  // 4) versão URGENTE pendente: nada de gastar pontos, pegar diária/Drops ou tocar lives
+  const u = await montar({ saldos: { yoda: 5000 }, urgente: true });
+  await u.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, u.store.pokeidleKick, { em: Date.now() + 1 }) });
+  await espera(2500);
+  ok('URGENTE: nenhum resgate, diária ou Drop', !u.chamadas.some((x) => x.u.includes('/redeem') || x.u.includes('/claim')));
+  ok('URGENTE: nenhuma live tocando, chip de pausa e quadro sem X', !u.sr().querySelector('.palco iframe') && /Pausada: atualização urgente/.test(u.sr().querySelector('.chips').textContent) && !!u.sr().querySelector('.qd-fundo.urgente') && !u.sr().querySelector('.qd-fundo.urgente .qd-x'));
+  // atualizou: o Release deixa de ser mais novo e tudo volta
+  await u.w.chrome.storage.local.set({ atualizacao: { disponivel: false, urgente: false } });
+  await espera(9000);
+  ok('depois de atualizar: volta a tocar as lives e a resgatar', !!u.sr().querySelector('.palco iframe') && u.chamadas.some((x) => x.u.includes('/redeem')));
 
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTUDO PASSOU');
   process.exit(falhas ? 1 : 0);

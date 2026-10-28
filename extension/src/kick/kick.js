@@ -242,7 +242,7 @@
 
     // resgata o pacote inteiro (um de cada) quando o saldo do canal cobre a soma
     async function talvezResgatar() {
-      if (!cfg.resgateAuto || resgatando) return;
+      if (!cfg.resgateAuto || resgatando || P.pausado()) return; // versão urgente: nada de gastar pontos
       if (!pkk || !pkk.vinculado) return; // sem vínculo no jogo os pontos seriam perdidos
       if (pkk.login && eu && pkk.login.toLowerCase() !== eu.toLowerCase()) return; // jogo vinculado a outra conta
       for (const c of cfg.canais) {
@@ -329,7 +329,7 @@
         const lista = (j && j.data) || [];
         const d = lista.find((c) => /daily/i.test(c.name || '') || c.recurrence === 'daily') || null;
         diaria = d ? { id: d.id, prog: d.condition ? d.condition.progress : 0, meta: d.condition ? d.condition.threshold : 60, status: d.status, pega: !!d.claimed_at || /claimed|completed_claimed/i.test(d.status || '') } : null;
-        if (cfg.diariaAuto) {
+        if (cfg.diariaAuto && !P.pausado()) {
           for (const c of lista) {
             const cond = c.condition || {};
             if (c.claimed_at || /claimed/i.test(c.status || '')) continue;
@@ -353,7 +353,7 @@
           for (const r of camp.rewards || []) {
             const item = { campanha: camp.name, nome: r.name, min: camp.progress_units || 0, req: r.required_units || 0, pego: !!r.claimed, conectado: camp.user_app_connected !== false };
             if (!item.pego) drops.push(item);
-            if (cfg.dropsAuto && !item.pego && item.conectado && item.req && item.min >= item.req) {
+            if (cfg.dropsAuto && !P.pausado() && !item.pego && item.conectado && item.req && item.min >= item.req) {
               try {
                 await api('https://web.kick.com/api/v1/drops/claim', { method: 'POST', body: { campaign_id: camp.id, reward_id: r.id } });
                 await registrarEvento({ tipo: 'drop', ok: true, texto: `Drop: ${r.name}` });
@@ -385,7 +385,7 @@
       return out;
     }
     function aplicarVagas() {
-      const alvo = escolherVagas();
+      const alvo = P.pausado() ? [] : escolherVagas(); // versão urgente: lives param até atualizar
       for (const [slug, fr] of iframes) if (!alvo.includes(slug)) { fr.remove(); iframes.delete(slug); }
       for (const slug of alvo) {
         if (iframes.has(slug)) continue;
@@ -432,7 +432,8 @@
         pacotesHoje ? chip(tr(pacotesHoje > 1 ? tr('{n} pacotes em 24 h') : tr('{n} pacote em 24 h'), { n: pacotesHoje }), 'ok', tr('Pacotes XP + Capture + Lure comprados nas últimas 24 h')) : null,
         diaria ? chip(diaria.pega ? tr('diária pega ✓') : tr('diária {a}/{b} min', { a: Math.min(diaria.prog, diaria.meta), b: diaria.meta }), diaria.pega ? 'ok' : '', tr('Daily Reward da Kick: 1 h assistida no dia')) : null,
         erro ? chip('Kick: ' + erro, 'alerta', tr('Erro ao falar com a Kick; tenta de novo sozinha')) : null,
-        !sessao() ? chip(tr('Entre na sua conta da Kick'), 'alerta') : null);
+        !sessao() ? chip(tr('Entre na sua conta da Kick'), 'alerta') : null,
+        P.pausado() ? chip(tr('Pausada: atualização urgente'), 'alerta', tr('Atualize a Plateia para voltar a pegar pontos, resgates e Drops')) : null);
     }
     function renderAbas() {
       repor(els.abas,
@@ -564,7 +565,9 @@
     P.aoMudar((m) => {
       if (m.pokeidleKick) { pkk = m.pokeidleKick.newValue || null; sincronizarPokeidle(); render(); talvezResgatar(); }
       if (m.pokeidle) { pk = m.pokeidle.newValue || null; if (aba === 'pokeidle') render(); }
+      if (m.atualizacao) { const p = P.urgentePendente(m.atualizacao.newValue); if (p !== pausadaAgora) { pausadaAgora = p; aplicarVagas(); render(); if (!p) talvezResgatar(); } }
     });
+    let pausadaAgora = P.pausado();
 
     function fecharSala() {
       salaAtiva = false;

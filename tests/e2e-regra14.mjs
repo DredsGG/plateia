@@ -2,9 +2,7 @@
 // instalação nova, Release mais novo simulado e atualização simulada, na página do site (sem abrir a sala),
 // em cada idioma do navegador (--lang), e troca de idioma pelo seletor da sala.
 // node e2e-regra14.mjs <pasta da extensão> <pasta de prints> <lang do navegador: pt-BR | en-US | es | fr>
-import { chromium } from 'playwright';
-import os from 'os';
-import path from 'path';
+import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
 const [EXT, OUT, LANG = 'pt-BR'] = process.argv.slice(2);
 const ESPERADO = LANG.startsWith('pt') ? 'pt' : LANG.startsWith('es') ? 'es' : 'en';
 const T = {
@@ -18,7 +16,7 @@ const T = {
 };
 let falhas = 0;
 const ok = (n, c, extra) => { console.log((c ? 'OK     ' : 'FALHOU ') + `[${LANG}] ` + n + (!c && extra ? '\n       ' + extra : '')); if (!c) falhas++; };
-const ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'pw-r14-' + LANG + Date.now()), {
+const ctx = await chromium.launchPersistentContext('/tmp/claude-0/pw-r14-' + LANG + Date.now(), {
   channel: 'chromium', headless: true, viewport: { width: 1440, height: 860 }, locale: LANG,
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, `--lang=${LANG}`, '--no-proxy-server'],
 });

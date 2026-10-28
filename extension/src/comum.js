@@ -136,4 +136,32 @@
   };
   P.local = () => ({ pt: 'pt-BR', en: 'en-US', es: 'es-ES' })[P.idioma] || 'en-US';
   P.trocarIdioma = async (l) => { if (!P.IDIOMAS.includes(l)) return; await P.gravar('idioma', l); P.idioma = l; };
+
+  // ---------- Versão nova (regras 7 e 14) ----------
+  // O fundo procura nos Releases e grava em storage.local.atualizacao; aqui fica o último estado conhecido.
+  P.cmpVersao = (a, b) => {
+    const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0), pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0 ? 1 : -1; }
+    return 0;
+  };
+  P.versaoNova = (st) => !!(st && st.disponivel && st.ultima && P.cmpVersao(st.ultima, P.versao()) > 0);
+  // Release com "URGENTE" no título: a automação pausa até atualizar (baú, resgates, lives da sala, chat)
+  P.urgentePendente = (st) => P.versaoNova(st) && !!st.urgente;
+  P.atualizacao = {};
+  P.atualizacaoPronta = P.ler('atualizacao', {}).then((st) => (P.atualizacao = st || {}));
+  P.aoMudar((m) => { if (m.atualizacao) P.atualizacao = m.atualizacao.newValue || {}; });
+  P.pausado = () => P.urgentePendente(P.atualizacao);
+  // Conferir sozinho: ao abrir a página e toda vez que a pessoa volta para a aba (o fundo só vai ao GitHub
+  // se a última procura tiver mais de 10 min); a cada 30 min quem procura é o alarme do fundo.
+  P.ESPERA_PROCURA_MS = 10 * 60000;
+  P.pedirProcura = () => {
+    try {
+      return Promise.resolve(ext.runtime.sendMessage({ cmd: 'procurarAtualizacao', seMaisVelhoQue: P.ESPERA_PROCURA_MS })).catch(() => null);
+    } catch (e) { return Promise.resolve(null); }
+  };
+  if (temChrome && window.top === window && /(^|\.)(twitch\.tv|kick\.com)$/.test(location.hostname)) {
+    P.pedirProcura();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') P.pedirProcura(); });
+    window.addEventListener('focus', () => P.pedirProcura());
+  }
 })();

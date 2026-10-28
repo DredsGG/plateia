@@ -21,7 +21,7 @@ async function conferirPermissoes(abrirGuia) {
     return ok;
   } catch (e) { return true; }
 }
-const PROCURA_MIN = 360;
+const PROCURA_MIN = 30; // regra 14: a cada 30 min (mais ao abrir a página e ao voltar para a aba, no máximo 1x a cada 10 min)
 const DISCO_MIN = 1;
 
 const cmpVer = (a, b) => {
@@ -83,10 +83,12 @@ async function procurar() {
     const zip = ((j.assets || []).find((a) => /\.zip$/i.test(a.name)) || {}).browser_download_url || null;
     const xpi = ((j.assets || []).find((a) => /\.xpi$/i.test(a.name)) || {}).browser_download_url || null;
     const disponivel = !!ultima && cmpVer(ultima, cur) > 0;
+    // Release marcado pelo André com "URGENTE" no título: aviso sem X e automação pausada até atualizar
+    const urgente = disponivel && /URGENT/i.test(String(j.name || '') + ' ' + String(j.tag_name || ''));
     const antes = (await ext.storage.local.get('atualizacao')).atualizacao || {};
     const novidades = !disponivel ? null
       : antes.novidadesDe === ultima && antes.novidades ? antes.novidades : await novidadesRemotas(j.tag_name, ultima);
-    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel, novidades, novidadesDe: disponivel ? ultima : null, erro: null }));
+    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel, urgente, novidades, novidadesDe: disponivel ? ultima : null, erro: null }));
   } catch (e) {
     return salvar(Object.assign(base, { erro: String((e && e.message) || e) }));
   }
@@ -133,17 +135,24 @@ ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'plateia-disco') vigiarDisco();
 });
 ext.runtime.onMessage.addListener((msg, _sender, responder) => {
-  if (msg && msg.cmd === 'procurarAtualizacao') { procurar().then(responder); return true; }
+  if (msg && msg.cmd === 'procurarAtualizacao') {
+    // da página (abrir/voltar para a aba): só vai ao GitHub se a última procura for mais velha que o pedido
+    const limite = Number(msg.seMaisVelhoQue) || 0;
+    ext.storage.local.get('atualizacao').then(({ atualizacao: st = {} }) =>
+      (limite && st.procuradoEm && Date.now() - st.procuradoEm < limite && !st.erro ? st : procurar())).then(responder, () => responder(null));
+    return true;
+  }
   if (msg && msg.cmd === 'aplicarAtualizacao') { aplicar().then(responder, (e) => responder({ status: 'erro', erro: String((e && e.message) || e) })); return true; }
   if (msg && msg.cmd === 'abrirGuia') { ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html') + (msg.ancora || '') }).then(() => responder({ ok: true })); return true; }
   return false;
 });
-ext.runtime.onStartup.addListener(() => { agendar(); procurar(); conferirPermissoes(true); });
+// abrir o navegador conta como "próxima abertura": o aviso adiado no X volta (regra 14)
+ext.runtime.onStartup.addListener(async () => { agendar(); await salvar({ adiadoAte: 0 }); procurar(); conferirPermissoes(true); });
 ext.runtime.onInstalled.addListener(async (d) => {
   agendar();
   if (d.reason === 'install') { await salvar({ instalacaoNova: true }); const ok = await conferirPermissoes(false); ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html' + (ok ? '#usar' : '#permissoes')) }); }
   if (d.reason === 'update') {
-    await salvar({ acabouDeAtualizar: { de: d.previousVersion || null, para: atual(), em: Date.now() }, disponivel: false, atual: atual() });
+    await salvar({ acabouDeAtualizar: { de: d.previousVersion || null, para: atual(), em: Date.now() }, disponivel: false, urgente: false, adiadoAte: 0, atual: atual() });
     // as salas abertas ainda rodam a versão antiga: recarregar põe a nova (reabrem sozinhas).
     // As outras abas da Twitch/Kick ficam como estão (o baú continua sendo pego); pegam a nova ao recarregar.
     const abas = await ext.tabs.query({ url: ['https://www.twitch.tv/drops/inventory*', 'https://kick.com/drops/claimed*'] });

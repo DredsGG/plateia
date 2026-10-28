@@ -5,6 +5,13 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.0': [
+      'A Plateia procura versão nova sozinha enquanto a Twitch ou a Kick estão abertas: ao abrir, a cada 30 minutos e quando você volta para a aba.',
+      'Quando sai versão nova, o aviso aparece na hora no meio da página, sem precisar recarregar.',
+      'O X do aviso só adia: ele volta depois de 1 hora ou quando você abrir o navegador de novo.',
+      'Versão urgente (para bug grave): o aviso não tem X e a Plateia pausa o baú, os resgates e as lives até você atualizar.',
+      'Se você pulou versões, as novidades mostram o que mudou em cada uma.'
+    ],
     '0.8.0': [
       'A Plateia agora fala português, inglês e espanhol. Na primeira vez ela usa o idioma do navegador.',
       'Troque o idioma quando quiser no seletor PT · EN · ES, no rodapé da sala.',

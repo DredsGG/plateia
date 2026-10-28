@@ -327,6 +327,11 @@
     "Abri o .xpi numa aba: confirme a instalação no Firefox.": "Abrí el .xpi en una pestaña: confirma la instalación en Firefox.",
     "Atualizando…": "Actualizando…",
     "O navegador ainda não liberou a versão nova. Tente de novo mais tarde.": "El navegador aún no liberó la versión nueva. Inténtalo más tarde.",
-    "Não deu para atualizar agora. Use \"Como atualizar\".": "No se pudo actualizar ahora. Usa \"Cómo actualizar\"."
+    "Não deu para atualizar agora. Use \"Como atualizar\".": "No se pudo actualizar ahora. Usa \"Cómo actualizar\".",
+    "Atualização urgente v{v}": "Actualización urgente v{v}",
+    "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "Esta versión corrige un problema grave. Plateia pausó los cofres, los reclamos y los directos de la sala hasta que actualices.",
+    "Pausada: atualização urgente": "En pausa: actualización urgente",
+    "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Actualiza Plateia para volver a sumar puntos, cofres y Drops",
+    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Actualiza Plateia para volver a sumar puntos, reclamos y Drops"
   };
 })();

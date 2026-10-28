@@ -5,6 +5,13 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.0': [
+      'Plateia checks for new versions by itself while Twitch or Kick is open: when it opens, every 30 minutes and when you come back to the tab.',
+      'When a new version is out, the notice shows up right away in the middle of the page, no reload needed.',
+      'The X on the notice only snoozes it: it comes back after 1 hour or the next time you open the browser.',
+      'Urgent version (for a serious bug): the notice has no X and Plateia pauses chests, claims and streams until you update.',
+      "If you skipped versions, what's new shows the changes in each one."
+    ],
     '0.8.0': [
       'Plateia now speaks Portuguese, English and Spanish. The first time, it uses your browser language.',
       'Switch the language any time with the PT · EN · ES selector in the room footer.',

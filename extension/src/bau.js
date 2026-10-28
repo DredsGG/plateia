@@ -20,7 +20,7 @@
     await P.gravar('ultimoBau', { canal, em: Date.now() });
   }
   function tentarBau() {
-    if (!cfg.bauAuto) return;
+    if (!cfg.bauAuto || P.pausado()) return; // versão urgente pendente: automação pausada (regra 14)
     const icone = document.querySelector('.claimable-bonus__icon');
     if (!icone) return;
     const botao = icone.closest('button');
@@ -40,7 +40,7 @@
   const RE_RESGATAR = /^(resgatar|claim|canjear|reclamar|récupérer|abholen|riscatta|odbierz)/i;
   let ultimoDrop = 0;
   function tentarDrops() {
-    if (!cfg.dropsAuto) return;
+    if (!cfg.dropsAuto || P.pausado()) return;
     if (!location.pathname.startsWith('/drops/inventory')) return;
     if (Date.now() - ultimoDrop < 5000) return;
     const main = document.querySelector('main') || document.body;
