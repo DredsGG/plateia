@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.1': [
+      'Kick: automatic redemption of the PokeIdle bundle (XP + Capture + Lure) works again. Kick was rejecting Plateia\'s request.',
+      'If a redemption fails, the Channels tab summary shows the error and when it will try again.'
+    ],
     '0.9.0': [
       'Plateia checks for new versions by itself while Twitch or Kick is open: when it opens, every 30 minutes and when you come back to the tab.',
       'When a new version is out, the notice shows up right away in the middle of the page, no reload needed.',

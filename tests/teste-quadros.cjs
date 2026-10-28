@@ -41,7 +41,7 @@ const ok = (n, v) => { res.push(v); console.log((v ? 'OK  ' : 'FALHOU ') + n); }
   // 2) atualização (já usava a Plateia, nunca viu os quadros): só as novidades
   const b = montar({ config: { canais: [{ login: 'canal1', modo: 'rodizio', mostrar: true }], v020: true } });
   await espera(400);
-  ok(`atualização abre "Novidades da v${V}"`, !!b.quadro() && b.quadro().textContent.includes(`Novidades da v${V}`) && b.sr().querySelectorAll('.qd-lista li').length >= 3);
+  ok(`atualização abre "Novidades da v${V}"`, !!b.quadro() && b.quadro().textContent.includes(`Novidades da v${V}`) && b.sr().querySelectorAll('.qd-lista li').length >= 2);
   ok('novidades não mostram o tutorial junto', !/Passo 1 de/.test(b.quadro().textContent));
   b.sr().querySelector('.qd-x').click(); await espera(50);
   ok('X fecha e grava a versão vista', !b.quadro() && b.store.quadros && b.store.quadros.novidades === V);

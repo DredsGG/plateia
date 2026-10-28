@@ -10,8 +10,8 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.9.0-9146FF)
-![Tests](https://img.shields.io/badge/tests-193%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.9.1-9146FF)
+![Tests](https://img.shields.io/badge/tests-195%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
@@ -179,7 +179,7 @@ Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purp
 
 - Twitch and Kick only pay points on **2 lives at a time** (measured), so only 2 slots play for real; the other channels get chat presence on Twitch and nothing on Kick.
 - Drops progress on one channel at a time, so the room doesn't speed them up.
-- A real Drop claimed at 100% and a real Kick bundle redemption haven't been seen live yet; the logic is covered by the tests.
+- A real Drop claimed at 100% hasn't been seen live yet; the logic is covered by the tests. The Kick bundle redemption was confirmed live on v0.9.1 (1,800 points spent on XP + Capture + Lure).
 - On Chrome, Edge, Brave and Opera GX the self-reload after an update needs **Developer mode** to stay on.
 - PokeIdle features need the game open in a tab (reload it once after installing Plateia). Bundle redemption only runs with Kick linked inside the game.
 - Firefox: until the Mozilla signing is set up, Plateia is a temporary add-on there (removed when Firefox closes). Firefox support passed Mozilla's linter (`web-ext lint`, 0 errors) and shares the tested code, but hasn't been run on a live account yet.
@@ -189,7 +189,7 @@ Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purp
 ```bash
 cd tests && npm i jsdom
 node teste-sala.cjs         # Twitch room logic in jsdom: 30/30
-node teste-kick.cjs         # Kick room: bundle, order, guard rails, PokeIdle summary, Daily Reward, Drops, tab, bug report, urgent pause: 21/21
+node teste-kick.cjs         # Kick room: bundle, order, guard rails, PokeIdle summary, Daily Reward, Drops, tab, bug report, urgent pause, ULID redemption id, no double purchase: 24/24
 node teste-chat.cjs         # dropped chat JOIN is retried: 3/3
 node teste-assinatura.cjs   # footer signature and version: 6/6
 node teste-rodape.cjs       # footer: update check, bug report without personal data, signature: 10/10

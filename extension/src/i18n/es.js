@@ -332,6 +332,7 @@
     "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "Esta versión corrige un problema grave. Plateia pausó los cofres, los reclamos y los directos de la sala hasta que actualices.",
     "Pausada: atualização urgente": "En pausa: actualización urgente",
     "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Actualiza Plateia para volver a sumar puntos, cofres y Drops",
-    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Actualiza Plateia para volver a sumar puntos, reclamos y Drops"
+    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Actualiza Plateia para volver a sumar puntos, reclamos y Drops",
+    "o resgate falhou ({e}); tenta de novo às {h}": "el canje falló ({e}); lo intenta de nuevo a las {h}"
   };
 })();

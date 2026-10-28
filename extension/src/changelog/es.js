@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.es = {
+    '0.9.1': [
+      'Kick: el canje automático del paquete de PokeIdle (XP + Capture + Lure) vuelve a funcionar. Kick rechazaba el pedido de Plateia.',
+      'Si un canje falla, el resumen de la pestaña Canales muestra el error y la hora del próximo intento.'
+    ],
     '0.9.0': [
       'Plateia busca versiones nuevas sola mientras Twitch o Kick están abiertos: al abrir, cada 30 minutos y cuando vuelves a la pestaña.',
       'Cuando sale una versión nueva, el aviso aparece al instante en el medio de la página, sin recargar.',

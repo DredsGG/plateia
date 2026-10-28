@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.1': [
+      'Kick: o resgate automático do pacote do PokeIdle (XP + Capture + Lure) voltou a funcionar. A Kick recusava o pedido da Plateia.',
+      'Se um resgate falhar, o resumo da aba Canais mostra o erro e a hora da próxima tentativa.'
+    ],
     '0.9.0': [
       'A Plateia procura versão nova sozinha enquanto a Twitch ou a Kick estão abertas: ao abrir, a cada 30 minutos e quando você volta para a aba.',
       'Quando sai versão nova, o aviso aparece na hora no meio da página, sem precisar recarregar.',

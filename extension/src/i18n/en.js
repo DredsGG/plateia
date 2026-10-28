@@ -332,6 +332,7 @@
     "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "This version fixes a serious problem. Plateia paused chests, claims and the room streams until you update.",
     "Pausada: atualização urgente": "Paused: urgent update",
     "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Update Plateia to start earning points, chests and Drops again",
-    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Update Plateia to start earning points, claims and Drops again"
+    "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Update Plateia to start earning points, claims and Drops again",
+    "o resgate falhou ({e}); tenta de novo às {h}": "the redemption failed ({e}); trying again at {h}"
   };
 })();

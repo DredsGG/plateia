@@ -12,6 +12,18 @@
   const slugValido = (s) => /^[a-z0-9_-]{2,40}$/.test(s || '');
   const limparSlug = (s) => String(s || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?kick\.com\//, '').replace(/^[@#]/, '').split(/[/?#\s]/)[0];
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  // transaction_id do resgate: o site manda um ULID (26 letras, Crockford base32, começa pela hora).
+  // UUID é recusado com 400 "Invalid request" (medido em 2026-10-27, bug da v0.9.0).
+  const ulid = () => {
+    const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    let t = Date.now(), s = '';
+    for (let i = 0; i < 10; i++) { s = A[t % 32] + s; t = Math.floor(t / 32); }
+    const r = new Uint8Array(16);
+    try { crypto.getRandomValues(r); } catch (e) { for (let i = 0; i < 16; i++) r[i] = Math.floor(Math.random() * 256); }
+    for (let i = 0; i < 16; i++) s += A[r[i] % 32];
+    return s;
+  };
+  P.kickUlid = ulid; // usado pelos testes
 
   // ---------- dentro de uma live da sala (iframe) ----------
   const naSalaKick = (() => {
@@ -35,8 +47,8 @@
   async function api(url, opts = {}) {
     const tok = sessao();
     if (!tok) throw new Error(tr('sem login'));
-    const cab = { Accept: 'application/json', Authorization: 'Bearer ' + tok };
-    if (url.startsWith('https://web.kick.com') || url.includes('/redeem')) cab['X-Client-Token'] = X_CLIENT_TOKEN;
+    const cab = { Accept: 'application/json', Authorization: 'Bearer ' + tok, 'X-App-Platform': 'web' }; // igual ao site
+    if (url.startsWith('https://web.kick.com')) cab['X-Client-Token'] = X_CLIENT_TOKEN;
     const xsrf = P.cookie('XSRF-TOKEN');
     if (xsrf && opts.method && opts.method !== 'GET') cab['X-XSRF-TOKEN'] = xsrf;
     if (opts.body) cab['Content-Type'] = 'application/json';
@@ -245,21 +257,22 @@
       if (!cfg.resgateAuto || resgatando || P.pausado()) return; // versão urgente: nada de gastar pontos
       if (!pkk || !pkk.vinculado) return; // sem vínculo no jogo os pontos seriam perdidos
       if (pkk.login && eu && pkk.login.toLowerCase() !== eu.toLowerCase()) return; // jogo vinculado a outra conta
-      for (const c of cfg.canais) {
-        const slug = c.slug;
-        if (!ehPokeidle(slug)) continue;
-        if (bloqueioResgate[slug] && Date.now() < bloqueioResgate[slug]) continue;
-        const pac = await lerPacote(slug);
-        const saldo = info[slug] && info[slug].saldo;
-        if (!pac.itens.length || pac.itens.length < 3 || !pac.custo || pac.custo > 20000) continue; // só pacote completo
-        if (typeof saldo !== 'number' || saldo < pac.custo) continue;
-        resgatando = true;
-        try {
+      // trava já na entrada: duas chamadas ao mesmo tempo (atualização + jogo) não podem comprar o pacote duas vezes
+      resgatando = true;
+      try {
+        for (const c of cfg.canais) {
+          const slug = c.slug;
+          if (!ehPokeidle(slug)) continue;
+          if (bloqueioResgate[slug] && Date.now() < bloqueioResgate[slug]) continue;
+          const pac = await lerPacote(slug);
+          const saldo = info[slug] && info[slug].saldo;
+          if (!pac.itens.length || pac.itens.length < 3 || !pac.custo || pac.custo > 20000) continue; // só pacote completo
+          if (typeof saldo !== 'number' || saldo < pac.custo) continue;
+          if (P.pausado()) break;
           for (const item of pac.itens) {
             const reg = { em: Date.now(), slug, tipo: item.tipo, titulo: item.titulo, custo: item.custo, ok: false };
             try {
-              const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + Math.random().toString(16).slice(2);
-              await api(`/api/v2/channels/${slug}/rewards/${item.id}/redeem`, { method: 'POST', body: { transaction_id: id, message: '' } });
+              await api(`/api/v2/channels/${slug}/rewards/${item.id}/redeem`, { method: 'POST', body: { transaction_id: ulid() } });
               reg.ok = true;
             } catch (e) {
               reg.erro = e.message + (e.status ? ` (${e.status})` : '');
@@ -272,10 +285,10 @@
             if (!reg.ok) break;
             await espera(2500 + Math.random() * 2000);
           }
-        } finally { resgatando = false; }
-        await atualizarSaldos([slug]);
-        aplicarVagas(); render();
-      }
+          await atualizarSaldos([slug]);
+          aplicarVagas(); render();
+        }
+      } finally { resgatando = false; }
     }
 
     // ----- dados da Kick -----
@@ -493,7 +506,10 @@
           ativos.length ? tr('bônus: {l}', { l: ativos.map(([t, ate]) => tr('{n} até {h}', { n: nomes[t] || t, h: hhmm(Number(ate)) })).join(', ') }) : tr('nenhum bônus ativo')),
         prox ? h('div', { class: 'st' }, prox.falta
           ? tr('Próximo pacote: {c}, faltam {n} pts', { c: prox.nome, n: fmt(prox.falta) }) + (prox.tocando ? ' (~' + tr('{d} tocando', { d: duracao(prox.falta / 10 * 5 * 60000) }) + ')' : '')
-          : tr('Próximo pacote: {c}, saldo já cobre', { c: prox.nome }) + (cfg.resgateAuto && pkk.vinculado ? ' (' + tr('resgatando') + ')' : '')) : null,
+          : tr('Próximo pacote: {c}, saldo já cobre', { c: prox.nome }) + (!cfg.resgateAuto || !pkk.vinculado ? ''
+            : bloqueioResgate[prox.slug] && Date.now() < bloqueioResgate[prox.slug]
+              ? ' (' + tr('o resgate falhou ({e}); tenta de novo às {h}', { e: ((resgates.find((r) => r.slug === prox.slug && !r.ok) || {}).erro || '?'), h: hhmm(bloqueioResgate[prox.slug]) }) + ')'
+              : ' (' + tr('resgatando') + ')')) : null,
         !cfg.resgateAuto ? h('div', { class: 'st' }, tr('Resgate automático desligado nos Ajustes.')) : null,
         tw ? h('div', { class: 'st' }, h('b', { class: 'tw' }, 'Twitch'), ` · ${tw}`) : null);
     }

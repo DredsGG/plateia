@@ -6,10 +6,10 @@ const raiz = path.resolve(__dirname, process.argv[2] || '../extension');
 const ler = (f) => fs.readFileSync(path.join(raiz, f), 'utf8');
 const manifest = JSON.parse(ler('manifest.json'));
 let falhas = 0;
-const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') + n); if (!c) falhas++; };
+const ok = (n, c, extra) => { console.log((c ? 'OK     ' : 'FALHOU ') + n + (!c && extra ? '\n       ' + extra : '')); if (!c) falhas++; };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function montar({ vinculado = true, saldos, recompensas3 = true, diariaProg = 60, dropConectado = true, urgente = false }) {
+async function montar({ vinculado = true, saldos, recompensas3 = true, diariaProg = 60, dropConectado = true, urgente = false, resgateFalha = false }) {
   const store = { idioma: 'pt', quadros: { tutorial: true, novidades: manifest.version } }, ouvintes = [];
   if (urgente) store.atualizacao = { disponivel: true, ultima: '99.0.0', urgente: true };
   store.pokeidleKick = { vinculado, login: 'dredsgg', pct: 0, minutos: 60, em: Date.now(),
@@ -34,7 +34,7 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   w.fetch = async (url, opt = {}) => {
     const u = String(url).replace('https://kick.com', '');
     const metodo = opt.method || 'GET';
-    chamadas.push({ metodo, u, corpo: opt.body ? JSON.parse(opt.body) : null, auth: opt.headers && opt.headers.Authorization });
+    chamadas.push({ metodo, u, corpo: opt.body ? JSON.parse(opt.body) : null, auth: opt.headers && opt.headers.Authorization, plataforma: opt.headers && opt.headers['X-App-Platform'] });
     let m;
     if (u === '/api/v1/user') return resp({ username: 'DredsGG' });
     if ((m = u.match(/^\/api\/v2\/channels\/([^/]+)$/))) return resp({ id: 1, user: { username: m[1], profile_pic: '' }, livestream: vivos.has(m[1]) ? { id: 9, is_live: true, viewer_count: 100, categories: [{ name: 'Just Chatting' }] } : null });
@@ -45,6 +45,9 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
       ...(recompensas3 ? [{ id: 'r-lure-' + m[1], title: 'Bônus de +15% Secret Lure', description: '1 hora de +15% na chance de shiny no PokeIdle', cost: 1000, is_enabled: true, is_paused: false, is_user_input_required: false }] : []),
       { id: 'r-tarot', title: 'LEITURA DE TAROT', description: 'carta', cost: 140000, is_enabled: true, is_paused: false, is_user_input_required: true }] });
     if ((m = u.match(/^\/api\/v2\/channels\/([^/]+)\/rewards\/([^/]+)\/redeem$/))) {
+      // como a Kick de verdade (medido em 27/10): transaction_id tem que ser ULID; UUID dá 400 "Invalid request"
+      const corpo = opt.body ? JSON.parse(opt.body) : {};
+      if (resgateFalha || !/^[0-9A-HJKMNP-TV-Z]{26}$/.test(corpo.transaction_id || '')) return resp({ data: [], message: 'Invalid request' }, 400);
       const custo = /xp/.test(m[2]) ? 300 : /cap/.test(m[2]) ? 500 : 1000; pts[m[1]] -= custo; return resp({ data: { ok: true } });
     }
     if (u.includes('gamification/challenges') && metodo === 'GET') return resp({ data: [{ id: 'd1', name: 'Daily Reward', recurrence: 'daily', status: 'in_progress', claimed_at: null, condition: { progress: diariaProg, threshold: 60 } }] });
@@ -74,7 +77,7 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   const red = a.chamadas.filter((c) => c.u.includes('/redeem'));
   console.log('       resgates:', red.map((c) => c.u.split('/rewards/')[1]).join(' | '));
   ok('resgate em pacote: 3 resgates no yoda (XP, Capture, Lure, nessa ordem)', red.length === 3 && /r-xp-yoda/.test(red[0].u) && /r-cap-yoda/.test(red[1].u) && /r-lure-yoda/.test(red[2].u));
-  ok('cada resgate leva transaction_id e message', red.every((c) => c.corpo && c.corpo.transaction_id && c.corpo.message === ''));
+  ok('cada resgate leva transaction_id em ULID (o formato do site; UUID a Kick recusa) e X-App-Platform web', red.every((c) => c.corpo && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(c.corpo.transaction_id) && c.plataforma === 'web') && new Set(red.map((c) => c.corpo.transaction_id)).size === 3);
   ok('resgate com o login (Bearer)', red.every((c) => /^Bearer /.test(c.auth || '')));
   ok('log de resgates gravado', (a.store.kickResgates || []).filter((r) => r.ok).length === 3);
   ok('Daily Reward pega quando completa 60 min', a.chamadas.some((c) => c.metodo === 'POST' && c.u.includes('challenges/d1/claim')));
@@ -101,6 +104,22 @@ async function montar({ vinculado = true, saldos, recompensas3 = true, diariaPro
   await c.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, c.store.pokeidleKick, { em: Date.now() + 1 }) });
   await espera(1500);
   ok('pacote incompleto (sem Lure): nenhum resgate', !c.chamadas.some((x) => x.u.includes('/redeem')));
+
+  // 3a) duas chamadas ao mesmo tempo (atualização + dados do jogo): compra o pacote uma vez só
+  const dup = await montar({ saldos: { yoda: 2000 } });
+  await Promise.all([dup.w.PLATEIA.kickAtualizar(), dup.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, dup.store.pokeidleKick, { em: Date.now() + 1 }) }), dup.w.PLATEIA.kickAtualizar()]);
+  await espera(12000);
+  const rd = dup.chamadas.filter((x) => x.u.includes('/redeem'));
+  ok('chamadas simultâneas: um pacote só (3 resgates, sem compra dupla)', rd.length === 3, rd.map((x) => x.u.split('/rewards/')[1]).join(','));
+
+  // 3b) a Kick recusa o resgate: o resumo mostra a falha e a próxima tentativa (não fica "resgatando")
+  const fz = await montar({ saldos: { yoda: 5000 }, resgateFalha: true });
+  await fz.w.chrome.storage.local.set({ pokeidleKick: Object.assign({}, fz.store.pokeidleKick, { em: Date.now() + 1 }) });
+  await espera(2500);
+  const txtF = (fz.sr().querySelector('.conteudo .pk') || {}).textContent || '';
+  ok('resgate recusado: uma tentativa só (sem chamada dupla), para no 1º, grava a falha e o resumo diz "o resgate falhou (...); tenta de novo às"', fz.chamadas.filter((x) => x.u.includes('/redeem')).length === 1 && (fz.store.kickResgates || [])[0] && fz.store.kickResgates[0].ok === false && /o resgate falhou \(Invalid request \(400\)\); tenta de novo às \d\d:\d\d/.test(txtF), txtF.slice(0, 200) + ' / redeems: ' + fz.chamadas.filter((x) => x.u.includes('/redeem')).map((x) => x.u.split('/rewards/')[1]).join(','));
+  const ul = fz.w.PLATEIA.kickUlid();
+  ok('ULID: 26 letras e começa pela hora atual', /^[0-9A-HJKMNP-TV-Z]{26}$/.test(ul) && Math.abs([...ul.slice(0, 10)].reduce((n, c) => n * 32 + '0123456789ABCDEFGHJKMNPQRSTVWXYZ'.indexOf(c), 0) - Date.now()) < 5000);
 
   // 4) versão URGENTE pendente: nada de gastar pontos, pegar diária/Drops ou tocar lives
   const u = await montar({ saldos: { yoda: 5000 }, urgente: true });
