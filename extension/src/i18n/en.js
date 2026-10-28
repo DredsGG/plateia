@@ -330,6 +330,8 @@
     "Não deu para atualizar agora. Use \"Como atualizar\".": "Could not update right now. Use \"How to update\".",
     "Atualização urgente v{v}": "Urgent update v{v}",
     "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "This version fixes a serious problem. Plateia paused chests, claims and the room streams until you update.",
+    "Clique na sala para contar minimizada": "Click the room to keep earning minimized",
+    "O navegador só deixa as lives seguirem com a janela minimizada depois de um clique na sala. Clique em qualquer lugar aqui uma vez.": "The browser only lets the streams keep going with the window minimized after a click in the room. Click anywhere here once.",
     "Pausada: atualização urgente": "Paused: urgent update",
     "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Update Plateia to start earning points, chests and Drops again",
     "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Update Plateia to start earning points, claims and Drops again",

@@ -10,8 +10,8 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.9.1-9146FF)
-![Tests](https://img.shields.io/badge/tests-195%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.9.2-9146FF)
+![Tests](https://img.shields.io/badge/tests-217%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
@@ -37,6 +37,7 @@ The extension knows which site it's on. **Twitch** and **Kick** each get their o
   - **2 lives that count.** Twitch only pays points and chests on 2 streams at a time, so 2 slots play for real: the full channel page in an iframe, muted, at 160p. The eye button hides a live without reloading it (it keeps counting).
   - **Rotation.** Slots rotate between the channels that are live every N minutes (20 by default, 10 minimum), so every channel earns at some point. Each channel can be **Fixed** (always gets a slot), **Rotation** or **Chat only**, and **▶** puts one on screen right now.
   - **Live counters:** live/total, in chat X/Y, earning 2/2, time to the next swap, points and chests since the room opened, balance per channel, Drops in progress.
+- **Keeps counting minimized.** Chrome pauses any video that never played with sound once its window is hidden, and the room's lives are always muted, so a minimized room used to stop earning (Twitch paused the lives, Kick stopped counting watch time). In the room's lives only, Plateia now keeps the page "visible" to the site, runs its timers on a Worker so they aren't throttled, and gives each live an inaudible sound touch (volume 0.0001 for an instant, then muted again) so Chrome doesn't pause it. Your volume isn't changed. If the browser refuses sound before any click, the room shows **"Click the room to keep counting minimized"**; one click anywhere in the room is enough.
 - **Add channels** by name or link, from the channels you follow that are live, or from the game below. **Clear list** (asks for a second click) and **PokeIdle channels only** start the list over.
 - **Settings tab** (*Ajustes*), in three groups with on/off switches: number of slots, rotation on/off, minutes per round, 160p for the room's lives; chat presence and follow PokeIdle's channels; chest and Drops on autopilot.
 - **PokeIdle bonus.** [PokeIdle](https://pokeidle.io) gives an XP bonus for being in the chat of its partner streams. With the game open in a tab, Plateia reads the list of bonus channels from the game itself (read only, it never sends anything to the game), keeps them on the list and shows whether the game already sees you on each one.
@@ -106,6 +107,7 @@ extension/
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
+├── src/visivel.js           page world, room lives only: keeps them playing and counting while the window is hidden
 ├── src/ui.js                shared UI and the room style per site: logo, icons, tutorial, what's new and new-version
 │                            notices (on the site page and in the room), update card, bug report, footer signature,
 │                            language selector
@@ -197,6 +199,7 @@ node teste-quadros.cjs      # first-run tutorial and what's new (skipped version
 node teste-avisos.cjs       # notices on the Twitch/Kick page: tutorial, what's new, new version, X snoozes 1 h, urgent pause: 38/38
 node teste-fundo.cjs        # background: 30-min check, 10-min floor for page requests, URGENTE releases, snooze reset: 10/10
 node teste-idiomas.cjs      # every UI string in en/es, browser-language detection, both rooms in pt/en/es, selector: 35/35
+node teste-visivel.cjs      # minimized room: Worker timers, page stays visible, sound touch refused -> click -> ok, your volume intact, site sees no events, room hint: 22/22
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10

@@ -96,6 +96,7 @@
 
     const info = {};          // login -> dados da Twitch
     const iframes = new Map();// login -> iframe tocando
+    const som = P.somSala(() => { try { renderChips(); } catch (e) {} }); // live sem "toque de som": avisa para clicar na sala (visivel.js)
     let vagasAtuais = [];
     let rodada = Object.assign({ inicio: Date.now(), ponteiro: 0 }, await P.ler('rodada', {}));
     if (Date.now() - rodada.inicio > 6 * 3600e3) rodada = { inicio: Date.now(), ponteiro: 0 };
@@ -490,6 +491,7 @@
         chip(tr('+{p} pts · {b} baús', { p: fmt(ganho), b: nBaus }), 'ok', tr('Pontos ganhos e baús pegos desde que a sala abriu')),
         pk && pk.vinculado && pkVivos.length ? chip(`PokeIdle${pkPct() ? ' ' + pkPct() : ''} · ` + tr('te vê {a}/{b}', { a: pkVe, b: pkVivos.length }), pkVe ? 'ok' : 'alerta',
           tr('Em quantos canais oficiais ao vivo o PokeIdle já te reconheceu / canais oficiais com bônus ao vivo. O jogo confere de tempos em tempos')) : null,
+        som.negado() ? chip(tr('Clique na sala para contar minimizada'), 'alerta', tr('O navegador só deixa as lives seguirem com a janela minimizada depois de um clique na sala. Clique em qualquer lugar aqui uma vez.')) : null,
         P.pausado() ? chip(tr('Pausada: atualização urgente'), 'alerta', tr('Atualize a Plateia para voltar a pegar pontos, baú e Drops')) : null,
         erroGql ? chip('Twitch: ' + erroGql, 'alerta', tr('A consulta de dados à Twitch falhou; a sala tenta de novo a cada minuto')) : null);
       renderPokeidle();

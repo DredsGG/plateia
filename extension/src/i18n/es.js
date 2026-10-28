@@ -330,6 +330,8 @@
     "Não deu para atualizar agora. Use \"Como atualizar\".": "No se pudo actualizar ahora. Usa \"Cómo actualizar\".",
     "Atualização urgente v{v}": "Actualización urgente v{v}",
     "Esta versão corrige um problema grave. A Plateia pausou o baú, os resgates e as lives da sala até você atualizar.": "Esta versión corrige un problema grave. Plateia pausó los cofres, los reclamos y los directos de la sala hasta que actualices.",
+    "Clique na sala para contar minimizada": "Haz clic en la sala para sumar minimizada",
+    "O navegador só deixa as lives seguirem com a janela minimizada depois de um clique na sala. Clique em qualquer lugar aqui uma vez.": "El navegador solo deja que los directos sigan con la ventana minimizada después de un clic en la sala. Haz clic una vez en cualquier parte.",
     "Pausada: atualização urgente": "En pausa: actualización urgente",
     "Atualize a Plateia para voltar a pegar pontos, baú e Drops": "Actualiza Plateia para volver a sumar puntos, cofres y Drops",
     "Atualize a Plateia para voltar a pegar pontos, resgates e Drops": "Actualiza Plateia para volver a sumar puntos, reclamos y Drops",

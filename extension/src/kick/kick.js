@@ -115,6 +115,7 @@
     const info = {};      // slug -> {nome, img, aoVivo, espectadores, jogo, saldo, saldoInicial}
     const pacotes = {};   // slug -> {itens:[{id,tipo,titulo,custo}], custo, em}
     const iframes = new Map();
+    const som = P.somSala(() => { try { renderChips(); } catch (e) {} }); // live sem "toque de som": avisa para clicar na sala (visivel.js)
     let vagasAtuais = [];
     let eu = '';
     let erro = '';
@@ -446,6 +447,7 @@
         diaria ? chip(diaria.pega ? tr('diária pega ✓') : tr('diária {a}/{b} min', { a: Math.min(diaria.prog, diaria.meta), b: diaria.meta }), diaria.pega ? 'ok' : '', tr('Daily Reward da Kick: 1 h assistida no dia')) : null,
         erro ? chip('Kick: ' + erro, 'alerta', tr('Erro ao falar com a Kick; tenta de novo sozinha')) : null,
         !sessao() ? chip(tr('Entre na sua conta da Kick'), 'alerta') : null,
+        som.negado() ? chip(tr('Clique na sala para contar minimizada'), 'alerta', tr('O navegador só deixa as lives seguirem com a janela minimizada depois de um clique na sala. Clique em qualquer lugar aqui uma vez.')) : null,
         P.pausado() ? chip(tr('Pausada: atualização urgente'), 'alerta', tr('Atualize a Plateia para voltar a pegar pontos, resgates e Drops')) : null);
     }
     function renderAbas() {

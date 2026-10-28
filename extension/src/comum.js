@@ -164,4 +164,26 @@
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') P.pedirProcura(); });
     window.addEventListener('focus', () => P.pedirProcura());
   }
+
+  // Sala: as lives (iframes) contam se o navegador deixou o "toque de som" de visivel.js (sem ele o Chrome
+  // pausa a live muda com a janela minimizada). Quando nega, um clique em qualquer lugar da sala libera:
+  // o clique é repassado às lives, que tentam de novo na hora.
+  P.somSala = (aoMudar) => {
+    const negados = new Set();
+    window.addEventListener('message', (e) => {
+      const d = e.data;
+      if (!d || typeof d.plateiaSom !== 'string' || !e.source || !/^https:\/\/(www\.twitch\.tv|kick\.com)$/.test(e.origin)) return;
+      const antes = negados.size;
+      if (d.plateiaSom === 'negado') negados.add(e.source); else negados.delete(e.source);
+      if (antes !== negados.size) aoMudar();
+    });
+    const liberar = () => {
+      for (const f of document.querySelectorAll('iframe')) { try { f.contentWindow.postMessage({ plateiaTentarSom: 1 }, '*'); } catch (e) {} }
+    };
+    window.addEventListener('pointerdown', liberar, true);
+    window.addEventListener('keydown', liberar, true);
+    return {
+      negado: () => { for (const w of negados) if (!w || w.closed || ![...document.querySelectorAll('iframe')].some((f) => f.contentWindow === w)) negados.delete(w); return negados.size > 0; }
+    };
+  };
 })();

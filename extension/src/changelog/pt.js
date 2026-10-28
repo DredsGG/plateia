@@ -5,6 +5,11 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.2': [
+      'As salas da Twitch e da Kick continuam ganhando pontos com a janela minimizada ou atrás de outras janelas.',
+      'Antes, com a janela escondida, o navegador pausava as lives mudas da sala e elas paravam de contar.',
+      'Se aparecer "Clique na sala para contar minimizada", um clique em qualquer lugar da sala resolve.'
+    ],
     '0.9.1': [
       'Kick: o resgate automático do pacote do PokeIdle (XP + Capture + Lure) voltou a funcionar. A Kick recusava o pedido da Plateia.',
       'Se um resgate falhar, o resumo da aba Canais mostra o erro e a hora da próxima tentativa.'

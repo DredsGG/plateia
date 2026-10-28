@@ -5,6 +5,11 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.2': [
+      'The Twitch and Kick rooms keep earning points with the window minimized or behind other windows.',
+      'Before, with the window hidden, the browser paused the muted room streams and they stopped counting.',
+      'If "Click the room to keep earning minimized" shows up, one click anywhere in the room fixes it.'
+    ],
     '0.9.1': [
       'Kick: automatic redemption of the PokeIdle bundle (XP + Capture + Lure) works again. Kick was rejecting Plateia\'s request.',
       'If a redemption fails, the Channels tab summary shows the error and when it will try again.'

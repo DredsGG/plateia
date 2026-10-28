@@ -5,6 +5,11 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.es = {
+    '0.9.2': [
+      'Las salas de Twitch y Kick siguen sumando puntos con la ventana minimizada o detrás de otras ventanas.',
+      'Antes, con la ventana oculta, el navegador pausaba los directos silenciados de la sala y dejaban de contar.',
+      'Si aparece "Haz clic en la sala para sumar minimizada", un clic en cualquier parte de la sala lo resuelve.'
+    ],
     '0.9.1': [
       'Kick: el canje automático del paquete de PokeIdle (XP + Capture + Lure) vuelve a funcionar. Kick rechazaba el pedido de Plateia.',
       'Si un canje falla, el resumen de la pestaña Canales muestra el error y la hora del próximo intento.'
