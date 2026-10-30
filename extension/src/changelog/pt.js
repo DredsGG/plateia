@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.3': [
+      'Novo botão Apoiar ♥ no rodapé da sala, opcional: Pix (Brasil) com QR Code feito na própria Plateia ou GitHub Sponsors (outros países).',
+      'Nada muda para quem não apoia: o quadro só abre se você clicar.'
+    ],
     '0.9.2': [
       'As salas da Twitch e da Kick continuam ganhando pontos com a janela minimizada ou atrás de outras janelas.',
       'Antes, com a janela escondida, o navegador pausava as lives mudas da sala e elas paravam de contar.',

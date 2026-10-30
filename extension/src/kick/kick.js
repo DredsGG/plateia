@@ -143,7 +143,7 @@
           els.abas = h('div', { class: 'abas' }),
           els.conteudo = h('div', { class: 'conteudo' }),
           P.ui.atualizacao({ sala: 'Kick', diagnostico: () => diagnosticoSala() }),
-          h('div', { class: 'rodape-fim' }, assinatura(), P.ui.seletorIdioma())),
+          h('div', { class: 'rodape-fim' }, P.ui.botaoApoiar(), assinatura(), P.ui.seletorIdioma())),
         els.palco = h('main', { class: 'palco' },
           els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, tr('Adicione canais na lista. As 2 lives que estão valendo aparecem aqui.')))))));
     document.documentElement.appendChild(host);

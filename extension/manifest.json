@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Plateia",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "default_locale": "en",
   "description": "__MSG_descricao__",
   "author": "Dreds",
@@ -27,6 +27,8 @@
         "src/changelog/pt.js",
         "src/changelog/en.js",
         "src/changelog/es.js",
+        "src/vendor/qrcode.js",
+        "src/pix.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/bau.js",
@@ -46,6 +48,8 @@
         "src/changelog/pt.js",
         "src/changelog/en.js",
         "src/changelog/es.js",
+        "src/vendor/qrcode.js",
+        "src/pix.js",
         "src/ui.js",
         "src/pokeidle-painel.js",
         "src/kick/kick.js"

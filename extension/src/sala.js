@@ -143,7 +143,7 @@
             tr('A Twitch só paga pontos e baú em 2 lives por vez (medido em 2026-10-23). Lives abertas em outras abas entram nessa conta. '),
             tr('Os outros canais ficam com você presente no chat.'))),
           P.ui.atualizacao({ sala: 'Twitch', diagnostico: () => diagnosticoSala() }),
-          h('div', { class: 'rodape-fim' }, P.ui.assinatura(), P.ui.seletorIdioma())),
+          h('div', { class: 'rodape-fim' }, P.ui.botaoApoiar(), P.ui.assinatura(), P.ui.seletorIdioma())),
         els.palco = h('main', { class: 'palco' },
           els.vazio = h('div', { class: 'vazio' }, ic('tela', 44), els.vazioTxt = h('span', {}, tr('Adicione canais na lista. As lives que estiverem valendo aparecem aqui.'))))));
     raiz.appendChild(app);

@@ -218,7 +218,7 @@
   .upd + .assina{margin-top:0;padding-top:6px}
   .rodape-fim{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:8px}
   .upd + .rodape-fim{margin-top:0;padding-top:6px}
-  .rodape-fim .assina{margin-top:0;padding-top:0}
+  .rodape-fim .assina{margin-top:0;padding-top:0;margin-right:auto}
   .idiomas{display:flex;gap:2px;padding:2px;border-radius:var(--r-bt);background:var(--elev2)}
   .idioma{height:22px;min-width:30px;padding:0 7px;border:0;border-radius:var(--r-bt);background:transparent;color:var(--suave);font:700 11px Inter,Arial,sans-serif;cursor:pointer}
   .idioma:hover{color:var(--texto)}
@@ -282,14 +282,14 @@
       ['Seus canais', 'Adicione canais pelo nome ou link, pelos que você segue ao vivo ou pelas lives do PokeIdle. Cada canal tem um modo: Fixo (sempre tem vaga), Rodízio (reveza as vagas) ou Só chat.'],
       ['Valendo agora', 'As lives que ganham pontos ficam no topo, com o tempo até o próximo rodízio. O ▶ põe uma live na vaga na hora, o olho esconde o vídeo sem parar de contar e o × tira da lista.'],
       ['PokeIdle', 'Com o jogo aberto numa aba, a Plateia lê os canais com bônus e põe na lista. A aba PokeIdle mostra o seu bônus e em quais lives o jogo já te vê.'],
-      ['Ajustes e rodapé', 'Em Ajustes você muda vagas, rodízio, baú e Drops automáticos. No rodapé: Procurar atualização e Relatar bug. Este tutorial volta no "? Como usar", no topo.']
+      ['Ajustes e rodapé', 'Em Ajustes você muda vagas, rodízio, baú e Drops automáticos. No rodapé: Procurar atualização, Relatar bug e Apoiar (opcional). Este tutorial volta no "? Como usar", no topo.']
     ],
     kick: [
       ['Bem-vindo à sala da Kick', 'A Kick só paga pontos em 2 lives por vez. A sala toca essas 2 e acompanha o saldo dos outros canais da lista.'],
       ['Seus canais', 'Adicione canais pelo nome ou link, pelos que você segue ao vivo ou pelos canais do PokeIdle. Modos: Fixo (sempre tem vaga), Fila (entra quando sobra vaga) ou Fora (só acompanha o saldo).'],
       ['Pacote do PokeIdle', 'Quando o saldo de um canal cobre XP + Capture Boost + Secret Lure, a Plateia compra os três. Só com a Kick vinculada no jogo. O resumo dourado mostra o próximo pacote.'],
       ['Daily Reward e Drops', 'A recompensa diária e os Drops que chegam a 100% são pegos sozinhos. Dá para desligar cada um em Ajustes.'],
-      ['Ajustes e rodapé', 'Em Ajustes você muda as vagas e o que é automático. No rodapé: Procurar atualização e Relatar bug. Este tutorial volta no "? Como usar", no topo.']
+      ['Ajustes e rodapé', 'Em Ajustes você muda as vagas e o que é automático. No rodapé: Procurar atualização, Relatar bug e Apoiar (opcional). Este tutorial volta no "? Como usar", no topo.']
     ]
   };
   const quadros = (opts) => {
@@ -523,6 +523,137 @@
     const botao = h('button', { class: 'upd-proc upd-bugbt', title: tr('Relatar um bug no GitHub da Plateia'), onclick: () => alternar() }, svgBug(), tr('Relatar bug'));
     return { caixa, botao, corpo, diagnostico, abrirNoGithub };
   };
+  // ---------- Apoiar ♥ (regra 16): doação opcional. Brasil = Pix (QR feito aqui, sem internet); outro país = GitHub Sponsors ----------
+  // Nunca abre sozinho, não insiste, não trava nada, nenhuma chamada de rede. Dados em src/pix.js (vault: apoio.md).
+  const reais = (v) => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+  const qrSvg = (txt, rotulo) => {
+    const m = P.pix.matriz(txt), n = m.length, borda = 4, lado = n + borda * 2;
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', `0 0 ${lado} ${lado}`); s.setAttribute('width', 232); s.setAttribute('height', 232);
+    s.setAttribute('role', 'img'); s.setAttribute('aria-label', rotulo); s.setAttribute('shape-rendering', 'crispEdges'); s.setAttribute('class', 'ap-qr');
+    const titulo = document.createElementNS('http://www.w3.org/2000/svg', 'title'); titulo.textContent = rotulo; s.appendChild(titulo);
+    const fundo = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    fundo.setAttribute('width', lado); fundo.setAttribute('height', lado); fundo.setAttribute('fill', '#fff'); s.appendChild(fundo);
+    let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) d += `M${c + borda} ${r + borda}h1v1h-1z`;
+    const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    caminho.setAttribute('d', d); caminho.setAttribute('fill', '#000'); s.appendChild(caminho);
+    return s;
+  };
+  const copiarTexto = async (txt, ondeColar) => {
+    try { await navigator.clipboard.writeText(txt); return true; } catch (e) {}
+    const ta = h('textarea', { style: 'position:fixed;left:-9999px;top:0' }); ta.value = txt; ondeColar.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); return ok;
+  };
+  const apoiar = (opts = {}) => {
+    let aberto = null, valor = 10, outro = '', antesDeAbrir = null;
+    const fechar = () => {
+      if (!aberto) return;
+      aberto.remove(); aberto = null;
+      document.removeEventListener('keydown', teclas, true);
+      if (antesDeAbrir && antesDeAbrir.focus) try { antesDeAbrir.focus(); } catch (e) {}
+    };
+    // foco preso no quadro; Esc fecha; as teclas não vão para os atalhos da Twitch/Kick
+    const focaveis = () => [...aberto.querySelectorAll('button,a[href],input')].filter((el) => !el.disabled);
+    const teclas = (e) => {
+      if (!aberto) return;
+      if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); fechar(); return; }
+      if (e.key === 'Tab') {
+        const f = focaveis(); if (!f.length) return;
+        const raiz = aberto.getRootNode(), atual = raiz.activeElement;
+        const i = f.indexOf(atual);
+        if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && (i === -1 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); }
+      }
+    };
+    const caixa = h('div', { class: 'qd ap', role: 'dialog', 'aria-modal': 'true', 'aria-label': tr('Apoiar a Plateia') });
+    const salvarEscolha = (op) => P.gravar('apoio', { opcao: op }).catch(() => {});
+    const topo = (voltar) => [
+      h('button', { class: 'qd-x', title: tr('Fechar (Esc)'), 'aria-label': tr('Fechar'), onclick: fechar }, icone('x', 14)),
+      h('div', { class: 'qd-tit' }, logo(22), h('b', {}, tr('Apoiar a Plateia'))),
+      voltar ? h('button', { class: 'ap-voltar', onclick: passo1 }, '← ' + tr('Voltar')) : null];
+    function passo1() {
+      const brPrimeiro = P.idioma === 'pt';
+      const cartao = (op, bandeira, nome, sub) => h('button', { class: 'ap-op' + ((op === 'br') === brPrimeiro ? ' destaque' : ''), 'data-op': op, onclick: () => { salvarEscolha(op); (op === 'br' ? passoBrasil : passoFora)(); } },
+        h('span', { class: 'ap-band', 'aria-hidden': 'true' }, bandeira), h('b', {}, nome), h('small', {}, sub));
+      repor(caixa, ...topo(false),
+        h('h3', {}, tr('De onde você é?')),
+        h('div', { class: 'ap-ops' },
+          cartao('br', '🇧🇷', tr('Brasil'), tr('Pix, em reais, na hora')),
+          cartao('fora', '🌎', tr('Outro país'), tr('Cartão, em dólar, pelo GitHub Sponsors'))),
+        h('p', { class: 'ap-nota' }, tr('É opcional e não muda nada na Plateia. Obrigado por usar!')));
+      const d = caixa.querySelector('.ap-op.destaque'); if (d) d.focus();
+    }
+    function passoBrasil() {
+      const area = h('div', { class: 'ap-pix' });
+      const erro = h('p', { class: 'ap-erro', role: 'alert' });
+      const campo = h('input', { class: 'ap-outro', type: 'text', inputmode: 'decimal', placeholder: tr('Outro valor (R$)'), 'aria-label': tr('Outro valor, em reais, de R$ 1 a R$ 10.000'), value: outro });
+      for (const ev of ['keyup', 'keypress']) campo.addEventListener(ev, (e) => e.stopPropagation());
+      campo.addEventListener('keydown', (e) => { if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation(); });
+      const avisoCopia = h('span', { class: 'ap-copiado', 'aria-live': 'polite' });
+      const desenharPix = () => {
+        const cod = P.pix.codigo(valor);
+        const rotulo = valor ? tr('QR Code Pix de {v}', { v: reais(valor) }) : tr('QR Code Pix sem valor (você digita no banco)');
+        repor(area,
+          h('div', { class: 'ap-qr-moldura' }, qrSvg(cod, rotulo)),
+          h('div', { class: 'ap-valor' }, valor ? reais(valor) : tr('Valor livre: você digita no banco')),
+          h('div', { class: 'ap-bts' },
+            h('button', { class: 'qd-bt ap-copiar', onclick: async () => { avisoCopia.textContent = (await copiarTexto(cod, caixa)) ? tr('Copiado!') : tr('Não deu para copiar.'); } }, tr('Copiar código Pix')),
+            avisoCopia),
+          h('div', { class: 'ap-chave' },
+            h('span', {}, tr('Chave Pix (aleatória)')), h('code', {}, P.pix.APOIO.chave),
+            h('button', { class: 'ap-copiar-chave', title: tr('Copiar chave'), 'aria-label': tr('Copiar chave'), onclick: async () => { avisoCopia.textContent = (await copiarTexto(P.pix.APOIO.chave, caixa)) ? tr('Copiado!') : tr('Não deu para copiar.'); } }, tr('Copiar'))));
+        area.dataset.codigo = cod; // usado pelos testes
+      };
+      const botoesValor = h('div', { class: 'ap-valores', role: 'group', 'aria-label': tr('Valor') });
+      const marcar = () => { for (const b of botoesValor.children) b.setAttribute('aria-pressed', String(b.dataset.v ? Number(b.dataset.v) === valor && !outro : false)); };
+      for (const v of P.pix.APOIO.valores) botoesValor.appendChild(h('button', { class: 'ap-v', 'data-v': String(v), onclick: () => { valor = v; outro = ''; campo.value = ''; erro.textContent = ''; marcar(); desenharPix(); } }, reais(v)));
+      const aplicarOutro = () => {
+        outro = campo.value;
+        const v = P.pix.lerValor(outro);
+        if (Number.isNaN(v)) { erro.textContent = tr('Digite um valor de R$ 1 a R$ 10.000.'); return; }
+        erro.textContent = ''; valor = v; marcar(); desenharPix();
+      };
+      campo.addEventListener('input', aplicarOutro);
+      campo.addEventListener('keydown', (e) => { if (e.key === 'Enter') aplicarOutro(); });
+      repor(caixa, ...topo(true),
+        h('h3', {}, '🇧🇷 ' + tr('Pix, em reais')),
+        botoesValor, campo, erro, area,
+        h('p', { class: 'ap-nota' }, tr('Abra o app do seu banco, escolha Pix → Ler QR Code ou Pix Copia e Cola. O nome que aparece é Andre Miller Fleck.')));
+      marcar(); desenharPix();
+      const pri = botoesValor.querySelector('[aria-pressed="true"]') || botoesValor.firstChild; if (pri) pri.focus();
+    }
+    function passoFora() {
+      repor(caixa, ...topo(true),
+        h('h3', {}, '🌎 GitHub Sponsors'),
+        h('p', {}, tr('Uma vez ou todo mês, a partir de US$ 1. Pagamento com cartão pelo GitHub, sem taxa para mim.')),
+        h('div', { class: 'qd-bts' },
+          h('span', { class: 'qd-esp' }),
+          h('a', { class: 'qd-bt ap-sponsors', href: P.pix.APOIO.sponsors, target: '_blank', rel: 'noopener noreferrer' }, tr('Abrir o GitHub Sponsors'))),
+        h('p', { class: 'ap-nota' }, tr('É opcional e não muda nada na Plateia. Obrigado por usar!')));
+      const a = caixa.querySelector('.ap-sponsors'); if (a) a.focus();
+    }
+    const abrir = async (ev) => {
+      if (aberto) return;
+      const app = opts.app || (ev && ev.currentTarget && ev.currentTarget.closest && ev.currentTarget.closest('.app'));
+      if (!app) return;
+      antesDeAbrir = ev && ev.currentTarget;
+      const fundo = h('div', { class: 'qd-fundo ap-fundo', onclick: (e) => { if (e.target === fundo) fechar(); } }, caixa);
+      aberto = fundo;
+      app.appendChild(fundo);
+      document.addEventListener('keydown', teclas, true);
+      const salvo = await P.ler('apoio', null).catch(() => null);
+      const op = salvo && salvo.opcao;
+      if (op === 'br') passoBrasil(); else if (op === 'fora') passoFora(); else passo1();
+    };
+    const botao = h('button', { class: 'upd-proc ap-botao', title: tr('Apoiar a Plateia (opcional)'), onclick: abrir }, tr('Apoiar') + ' ', h('span', { class: 'ap-coracao', 'aria-hidden': 'true' }, '♥'));
+    const r = { botao, abrir, fechar, aberto: () => !!aberto };
+    P.apoio = r; // usado pelos testes
+    return r;
+  };
+  // botão do rodapé (fica antes do "feito por Dreds"); sem os dados do Pix carregados, não aparece
+  const botaoApoiar = () => (P.pix ? apoiar().botao : null);
   const atualizacao = (opts = {}) => {
     const caixa = h('div', { class: 'upd' });
     let st = {}, procurando = false, baixou = false;
@@ -574,7 +705,7 @@
   const CSS_ATUALIZACAO = `
   .upd{display:flex;flex-direction:column;gap:8px;margin-top:auto}
   .upd-linha{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--apagado,#a8a8b3)}
-  .upd-proc{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;background:var(--sec,#1f1f23);border:0;border-radius:var(--r-bt,6px);color:var(--texto,#dedee3);font:600 12px Inter,Arial,sans-serif;cursor:pointer}
+  .upd-proc{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;white-space:nowrap;background:var(--sec,#1f1f23);border:0;border-radius:var(--r-bt,6px);color:var(--texto,#dedee3);font:600 12px Inter,Arial,sans-serif;cursor:pointer}
   .upd-proc:hover{background:var(--sec2,#2a2a30)}
   .upd-ic{display:inline-block}
   .upd-proc.girando .upd-ic{animation:girar 1s linear infinite}
@@ -606,6 +737,39 @@
   .upd-bt:hover{background:#ffe08a}
   .upd-bt.sec{background:rgba(255,215,106,.14);color:#f6e7b0}
   .upd-ok{background:var(--ok-tinta,#123d22);color:var(--ok,#a6f0c0);border-radius:var(--r-card,8px);padding:9px 12px;font-size:12.5px;font-weight:600}
+  .ap-coracao{color:#ff5c8a;font-size:13px;line-height:1}
+  .ap-fundo{z-index:60}
+  .qd.ap{width:min(440px,100%)}
+  .ap h3{margin:2px 0 14px!important}
+  .ap-voltar{position:absolute;top:12px;right:46px;height:28px;padding:0 10px;border:0;border-radius:var(--r-bt);background:transparent;color:var(--suave);font:600 12.5px Inter,Arial,sans-serif;cursor:pointer}
+  .ap-voltar:hover{background:var(--sec);color:var(--texto)}
+  .ap-ops{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ap-op{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:118px;padding:14px;border:2px solid var(--linha);border-radius:var(--r-card);background:var(--elev);color:var(--texto);text-align:left;cursor:pointer;font-family:inherit}
+  .ap-op:hover{border-color:var(--sec2);background:var(--elev2)}
+  .ap-op.destaque{border-color:var(--cor);background:var(--cor-tinta)}
+  .ap-band{font-size:26px;line-height:1}
+  .ap-op b{font:700 15px var(--titulo)}
+  .ap-op small{color:var(--suave);font-size:12.5px;line-height:1.4}
+  .ap-nota{margin:14px 0 0!important;font-size:12.5px!important;color:var(--apagado)!important}
+  .ap-valores{display:flex;gap:6px;flex-wrap:wrap}
+  .ap-v{height:32px;min-width:68px;padding:0 12px;border:2px solid var(--linha);border-radius:var(--r-bt);background:var(--elev);color:var(--texto);font:700 13px Inter,Arial,sans-serif;cursor:pointer}
+  .ap-v:hover{background:var(--elev2)}
+  .ap-v[aria-pressed="true"]{border-color:var(--cor);background:var(--cor-tinta)}
+  .ap-outro{width:100%;height:34px;margin-top:8px;padding:0 10px;background:var(--bg);color:var(--texto);border:2px solid var(--linha);border-radius:var(--r-bt);font:600 13.5px Inter,Arial,sans-serif;outline:none;box-sizing:border-box}
+  .ap-outro:focus{border-color:var(--cor)}
+  .ap-erro{margin:6px 0 0!important;color:var(--alerta)!important;font-size:12.5px!important;min-height:0}
+  .ap-erro:empty{display:none}
+  .ap-pix{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px}
+  .ap-qr-moldura{padding:10px;background:#fff;border-radius:10px;line-height:0}
+  .ap-qr{display:block;width:232px;height:232px;max-width:100%}
+  .ap-valor{font:700 16px var(--titulo);color:var(--texto)}
+  .ap-bts{display:flex;align-items:center;gap:10px}
+  .ap-copiado{color:var(--ok);font-size:12.5px;font-weight:600}
+  .ap-chave{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:4px 8px;font-size:12px;color:var(--suave)}
+  .ap-chave code{font:12px Consolas,Menlo,monospace;color:var(--texto);word-break:break-all}
+  .ap-copiar-chave{height:24px;padding:0 9px;border:0;border-radius:var(--r-bt);background:var(--sec);color:var(--texto);font:600 11.5px Inter,Arial,sans-serif;cursor:pointer}
+  .ap-copiar-chave:hover{background:var(--sec2)}
+  a.qd-bt{display:inline-flex;align-items:center;text-decoration:none}
   `;
   // bolinha dourada no botão "Plateia" quando tem versão nova
   const marcarNovidade = async (botao) => {
@@ -619,5 +783,5 @@
     P.aoMudar((m) => { if (m.atualizacao) aplicar(m.atualizacao.newValue); });
   };
   const CSS_BOLINHA = 'button.nova::after{content:"";position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ffd76a;border:2px solid #0e0e10}';
-  P.ui = { svgDe, h, repor, fmt, mmss, hhmm, duracao, logo, assinatura, atualizacao, CSS_ATUALIZACAO, marcarNovidade, CSS_BOLINHA, icone, cssSala, quadros, seletorIdioma, avisosSite };
+  P.ui = { botaoApoiar, svgDe, h, repor, fmt, mmss, hhmm, duracao, logo, assinatura, atualizacao, CSS_ATUALIZACAO, marcarNovidade, CSS_BOLINHA, icone, cssSala, quadros, seletorIdioma, avisosSite };
 })();

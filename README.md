@@ -10,8 +10,8 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.9.2-9146FF)
-![Tests](https://img.shields.io/badge/tests-217%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.9.3-9146FF)
+![Tests](https://img.shields.io/badge/tests-261%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
@@ -70,7 +70,7 @@ They show up by themselves, centered on the Twitch or Kick page you're on: no ne
 <img src="docs/plateia-tutorial.png" width="900" alt="First-run tutorial on a Twitch channel page: a small centered dialog 'How to use the Twitch room', step 2 of 5 'Your channels', explaining how to add channels and the Pinned, Rotation and Chat only modes, with Skip, Back and Next buttons; the stream stays visible around it">
 
 - **First run** in a browser: a short tutorial (5 steps for each site), with **Skip** and **Got it**, plus **Open the room** on the last step. It doesn't come back by itself; **? How to use** at the top of the room reopens it.
-- **After an update**, the first page you open shows **What's new in vX.Y.Z**, once per version (if you skipped versions, it lists each one). The texts live in `extension/src/changelog/` (`pt.js`, `en.js`, `es.js`) and are updated on every version.
+- **After an update**, the first page you open shows **What's new in vX.Y.Z**, once per version (if you skipped versions, it lists each one, up to the last 4). The texts live in `extension/src/changelog/` (`pt.js`, `en.js`, `es.js`) and are updated on every version.
 
 <img src="docs/plateia-novidades.png" width="360" alt="What's new dialog on a Kick page: 'What's new in v0.9.0' with a short list of changes and the buttons See the tutorial and Got it">
 
@@ -78,6 +78,19 @@ They show up by themselves, centered on the Twitch or Kick page you're on: no ne
 - **Urgent version**: when a release title has **URGENTE**, the box has no X and Plateia pauses its automation (chests, Drops, Kick redemptions, the room's streams and chat) until you update.
 
 <img src="docs/plateia-new-version.png" width="900" alt="New version notice centered on a Twitch channel page: 'New version v0.9.1, you have v0.9.0', two short lines about what changed, and the buttons How to update and Update">
+
+### Support button
+
+<p align="center">
+  <img src="docs/plateia-support-choice.png" width="420" alt="Support Plateia dialog: Where are you from? with two cards, Brazil (Pix, in reals, instantly) and Another country (card, in dollars, via GitHub Sponsors), and the line It's optional and changes nothing in Plateia">
+  &nbsp;
+  <img src="docs/plateia-support-pix.png" width="300" alt="Pix path of the Support dialog in Portuguese: R$ 5, R$ 10 and R$ 25 buttons, an Other amount field, the QR code for R$ 10, Copy Pix code and the Pix key with its own copy button">
+</p>
+
+- **Support ♥** sits in the footer of both rooms, before the "made by Dreds" signature. It never opens by itself and changes nothing in Plateia.
+- **Brazil:** Pix in reals, R$ 5, 10, 25 or any amount. The BR Code is built locally (static, CRC16-CCITT) and drawn as a QR with [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT, bundled with its license), with a **Copy Pix code** button.
+- **Another country:** opens [GitHub Sponsors](https://github.com/sponsors/DredsGG) in a new tab.
+- No new permission and no network call from the dialog; nothing about who donates is stored.
 
 ## How it was measured
 
@@ -107,6 +120,8 @@ extension/
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
+├── src/pix.js               Pix BR Code for the Support dialog (static, CRC16-CCITT), no network
+├── src/vendor/qrcode.js     qrcode-generator 2.0.4 (MIT, license next to it) to draw the Pix QR
 ├── src/visivel.js           page world, room lives only: keeps them playing and counting while the window is hidden
 ├── src/ui.js                shared UI and the room style per site: logo, icons, tutorial, what's new and new-version
 │                            notices (on the site page and in the room), update card, bug report, footer signature,
@@ -199,12 +214,15 @@ node teste-quadros.cjs      # first-run tutorial and what's new (skipped version
 node teste-avisos.cjs       # notices on the Twitch/Kick page: tutorial, what's new, new version, X snoozes 1 h, urgent pause: 38/38
 node teste-fundo.cjs        # background: 30-min check, 10-min floor for page requests, URGENTE releases, snooze reset: 10/10
 node teste-idiomas.cjs      # every UI string in en/es, browser-language detection, both rooms in pt/en/es, selector: 35/35
+node teste-apoio.cjs        # Support dialog: Pix codes match the reference, CRC, amounts and limits, footer order, never opens by itself, copy with and without clipboard, Esc/X/outside, focus trap, no network, pt/en/es, Kick: 44/44
 node teste-visivel.cjs      # minimized room: Worker timers, page stays visible, sound touch refused -> click -> ok, your volume intact, site sees no events, room hint: 22/22
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10
 node e2e-regra14.mjs ../extension /tmp <pt-BR|en-US|es|fr>   # notices and languages in real Chromium, per browser language: 19 checks each
 node e2e-insistente.mjs /path/to/copy-of-extension /tmp     # page already open: new release, snooze and return, back-to-tab check, URGENTE pause until updated: 16/16
+
+node e2e-apoio.mjs ../extension /tmp/out              # Support dialog in real Chromium: prints in pt/en/es on both paths, Esc closes, Sponsors opens in a new tab, no network
 
 # Firefox: Mozilla's linter, self-distribution rules (0 errors)
 npx web-ext lint --source-dir ../extension --self-hosted
@@ -217,6 +235,10 @@ npx web-ext lint --source-dir ../extension --self-hosted
 ## Disclaimer
 
 Personal project, not affiliated with or endorsed by Twitch, Kick or PokeIdle. It doesn't fake viewing: lives that earn points are real players playing video. Automating clicks and redemptions may still go against Twitch's or Kick's Terms of Service. Use it on your own account and at your own risk.
+
+## Support
+
+Plateia is free. If it helps you, there's an optional **Support ♥** button in the room: Pix for Brazil or [GitHub Sponsors](https://github.com/sponsors/DredsGG) from anywhere else.
 
 ## License
 

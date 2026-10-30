@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.3': [
+      'New Support ♥ button in the room footer, optional: Pix (Brazil) with a QR code made by Plateia itself, or GitHub Sponsors (other countries).',
+      'Nothing changes if you don\'t support: the box only opens when you click.'
+    ],
     '0.9.2': [
       'The Twitch and Kick rooms keep earning points with the window minimized or behind other windows.',
       'Before, with the window hidden, the browser paused the muted room streams and they stopped counting.',
