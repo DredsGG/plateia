@@ -1,5 +1,5 @@
 // Roda todos os testes jsdom (teste-*.cjs) e soma os OK / FALHOU.
-// Uso: node rodar-todos.cjs [pasta da extensão, padrão ../instalada]
+// Uso: node rodar-todos.cjs [pasta da extensão, padrão ../extension]
 // Precisa do jsdom (npm i jsdom): se não estiver ao lado, use NODE_PATH=<pasta>/node_modules.
 const { spawnSync } = require('child_process');
 const fs = require('fs'), path = require('path');
