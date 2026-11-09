@@ -281,7 +281,7 @@
       ['Bem-vindo à sala da Twitch', 'Aqui você fica presente em várias lives de uma vez. A Twitch só paga pontos e baú em 2 lives por vez: essas 2 tocam de verdade, e nas outras você fica no chat.'],
       ['Seus canais', 'Adicione canais pelo nome ou link, pelos que você segue ao vivo ou pelas lives do PokeIdle. Cada canal tem um modo: Fixo (sempre tem vaga), Rodízio (reveza as vagas) ou Só chat.'],
       ['Valendo agora', 'As lives que ganham pontos ficam no topo, com o tempo até o próximo rodízio. O ▶ põe uma live na vaga na hora, o olho esconde o vídeo sem parar de contar e o × tira da lista.'],
-      ['PokeIdle', 'Com o jogo aberto numa aba, a Plateia lê os canais com bônus e põe na lista. A aba PokeIdle mostra o seu bônus e em quais lives o jogo já te vê.'],
+      ['PokeIdle', 'Com o jogo aberto numa aba, a Plateia lê os canais com bônus e põe na lista. O bônus do jogo é comprado com os pontos do canal: a aba PokeIdle mostra os bônus ativos e a próxima compra, e o resgate automático compra 10 h de cada bônus.'],
       ['Ajustes e rodapé', 'Em Ajustes você muda vagas, rodízio, baú e Drops automáticos. No rodapé: Procurar atualização, Relatar bug e Apoiar (opcional). Este tutorial volta no "? Como usar", no topo.']
     ],
     kick: [

@@ -1,5 +1,5 @@
 // Plateia — aba "PokeIdle" (igual nas salas da Twitch e da Kick)
-// Mostra o que o próprio jogo diz: bônus da Twitch (presença no chat) e horas de bônus da Kick (resgates).
+// Mostra o bônus do PokeIdle nas duas plataformas, que desde 04/11/2026 é comprado com pontos do canal: horas ativas, próxima compra e últimos resgates.
 (() => {
   const P = window.PLATEIA;
   if (!P || P.painelPokeidle) return;
@@ -25,23 +25,54 @@
     const blocos = [];
 
     // ---------- Twitch ----------
+    // Desde 04/11/2026 o bônus da Twitch é comprado com pontos do canal (como na Kick): aqui vão os bônus ativos com a
+    // hora de fim, a próxima compra, o saldo por canal, os últimos resgates e o erro, se houver.
     const tw = [];
+    const R = P.twitchResgate;
+    const regsTw = (opts.twitch && opts.twitch.regs) || [];
     if (!pk) {
       tw.push(h('p', { class: 'nota' }, tr('Sem dados do jogo ainda. Com o PokeIdle aberto numa aba, recarregue a aba do jogo (F5) uma vez.')));
     } else if (!pk.vinculado) {
       tw.push(h('p', { class: 'aviso' }, tr('Twitch não vinculada no PokeIdle. Vincule no jogo (Bônus Twitch).')));
     } else {
-      const comBonus = new Set((pk.oficiais || []).filter((o) => o.bonus).map((o) => o.login));
-      const vivas = (pk.lives || []).filter((l) => comBonus.has(l.login));
-      const ve = new Set(pk.assistindoEm || []);
-      tw.push(h('div', { class: 'pk-linha' }, h('b', {}, tr('Bônus agora: {p}', { p: P.pkPct(pk.pct) || '0%' })),
-        ' · ' + tr('te vê em {a}/{b} lives com bônus', { a: vivas.filter((l) => ve.has(l.login)).length, b: vivas.length })));
-      tw.push(h('p', { class: 'nota' }, tr('Conta presença no chat: 15% + 2,5% por live extra. A lista do chat chega com atraso de alguns minutos.')));
-      for (const l of vivas) {
-        tw.push(h('div', { class: 'pk-item' }, h('span', {}, l.nome || l.login),
-          ve.has(l.login) ? h('span', { class: 'tag t2' }, tr('te vê ✓')) : h('span', { class: 'tag' }, tr('ainda não viu'))));
+      const t = opts.twitch;
+      const ativos = R ? (t ? t.ativos : R.bonusAtivos(pk, [])) : [];
+      tw.push(h('div', { class: 'pk-linha' }, h('b', {}, ativos.length ? tr('Bônus ativos:') : tr('Nenhum bônus da Twitch ativo agora'))));
+      for (const b of ativos) {
+        tw.push(h('div', { class: 'pk-item' }, h('span', {}, `+15% ${b.rotulo}`),
+          h('span', { class: 'tag t2', title: b.fonte === 'jogo' ? tr('Fim informado pelo jogo') : tr('Fim estimado pelas compras da Plateia (relógio corrido, 10 h por compra)') },
+            tr('até {h}', { h: hhmm(b.ate) }) + ' · ' + duracao(b.ate - agora) + (b.fonte === 'jogo' ? '' : ' ~'))));
       }
-      if (!vivas.length) tw.push(h('p', { class: 'nota' }, tr('Nenhuma live oficial com bônus no ar agora.')));
+      tw.push(h('p', { class: 'nota' }, tr('Na Twitch o bônus é comprado: cada resgate de recompensa do PokeIdle num canal oficial soma horas de +15%. Só rende com o vídeo rodando na página do canal (as 2 vagas da sala).')));
+      if (t && plataforma === 'twitch') {
+        tw.push(h('div', { class: 'pk-linha' }, h('b', {}, tr('Resgate automático')), ' · ' + (!t.ligado ? tr('desligado nos Ajustes') : t.pausado ? tr('pausado por você') : t.bloqueadoAte ? tr('parado até {h}', { h: hhmm(t.bloqueadoAte) }) : tr('ligado'))));
+        if (t.erro) tw.push(h('p', { class: 'aviso' }, tr('Resgate parado: {e}', { e: t.erro }) + ' ' + tr('Tenta de novo às {h}.', { h: hhmm(t.bloqueadoAte) })));
+        else if (t.ligado && t.impedimento && !t.pausado) tw.push(h('p', { class: 'nota' }, tr('Não comprando agora: {m}.', { m: t.impedimento })));
+        if (t.aviso && !t.erro) tw.push(h('p', { class: 'nota' }, t.aviso));
+        if (t.ligado) tw.push(h('button', { class: 'mini', onclick: t.onPausar, title: tr('Pausa o resgate automático até você retomar ou fechar a sala') }, t.pausado ? tr('Retomar') : tr('Pausar')));
+        if (t.prox) {
+          const pr = t.prox;
+          tw.push(h('div', { class: 'pk-linha' }, h('b', {}, tr('Próxima compra')), ' · ' + `${pr.rotulo} (10h) ${fmt(pr.custo)}`));
+          if (!pr.canais.length) tw.push(h('p', { class: 'nota' }, tr('Nenhum canal oficial da lista com saldo lido ainda.')));
+          for (const c of pr.canais.slice(0, 8)) {
+            const pct = pr.custo ? Math.min(100, Math.round(c.saldo / pr.custo * 100)) : 0;
+            tw.push(h('div', { class: 'pk-canal' },
+              h('div', { class: 'pk-item' }, h('span', { class: 'pk-nome' }, c.nome, c.tocando ? h('span', { class: 'tag t1', title: tr('Tocando agora na sala') }, P.ui.icone('play', 9), tr('tocando')) : null),
+                h('span', { class: 'st' }, `${fmt(c.saldo)} / ${fmt(pr.custo)}`)),
+              h('div', { class: 'barra' }, h('i', { style: `width:${pct}%` })),
+              c.falta ? h('small', { class: 'st' }, tr('faltam {n} pts', { n: fmt(c.falta) }) + (c.tocando ? ' · ~' + tr('{d} tocando', { d: duracao(c.falta / 10 * 5 * 60000) }) : '')) : h('small', { class: 'st' }, tr('saldo já cobre'))));
+          }
+        } else if (ativos.length === 3) {
+          tw.push(h('p', { class: 'nota' }, tr('Os três bônus têm mais de 1 h: a Plateia só compra de novo quando faltar menos de 1 h (não empilha).')));
+        }
+        if (regsTw.length) {
+          tw.push(h('div', { class: 'pk-linha' }, h('b', {}, tr('Últimos resgates'))));
+          for (const r of regsTw.slice(0, 6)) {
+            tw.push(h('div', { class: 'pk-item' }, h('span', {}, `${hhmm(r.em)} · ${r.canal} · ${R && R.TIPOS.find((x) => x.tipo === r.tipo) ? R.TIPOS.find((x) => x.tipo === r.tipo).rotulo + ' 10h' : r.nome}`),
+              r.ok ? h('span', { class: 'tag t2' }, `-${fmt(r.custo)}`) : h('span', { class: 'tag', title: r.erro || '' }, r.incerta ? tr('não confirmado') : tr('falhou'))));
+          }
+        }
+      }
     }
     blocos.push(h('section', { class: 'pk-sec' },
       h('div', { class: 'pk-tit tw' }, 'Twitch', idade(pk) > 10 ? h('small', {}, ' ' + tr('dados de {m} min atrás', { m: idade(pk) })) : null),

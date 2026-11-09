@@ -80,7 +80,7 @@ function chromeFalso(store, ouvintes) {
   w.HTMLIFrameElement.prototype.__ok = 1;
   w.eval(ler('src/comum.js')); w.eval(ler('src/i18n/en.js')); w.eval(ler('src/i18n/es.js'));
   w.eval(ler('src/ui.js'));
-  w.eval(ler('src/pokeidle-painel.js'));
+  w.eval(ler('src/twitch-resgate.js')); w.eval(ler('src/pokeidle-painel.js'));
   w.eval(ler('src/sala.js'));
   await espera(300);
   const sr = () => w.document.getElementById('plateia-sala').shadowRoot;
@@ -96,8 +96,9 @@ function chromeFalso(store, ouvintes) {
   ok('canal manual continua', cfg().canais.some((c) => c.login === 'eugengen' && !c.origem));
   const frames = () => [...sr().querySelectorAll('iframe')].filter((f) => f.title !== 'inventario').map((f) => f.dataset.login);
   ok('2 vagas tocando, com o fixo (necros) dentro', frames().length === 2 && frames().includes('necros'));
-  ok('chip do PokeIdle mostra "te vê 1/3"', /te vê 1\/3/.test(sr().querySelector('.chips').textContent));
-  ok('tag "jogo te vê ✓" no dersin2k', [...sr().querySelectorAll('.card')].some((c) => /dersin2k/.test(c.textContent) && /jogo te vê ✓/.test(c.textContent)));
+  // v0.9.4: o bônus da Twitch é comprado (não é mais presença no chat): o chip mostra os bônus ativos, e "te vê" saiu
+  ok('chip do PokeIdle mostra "PokeIdle: sem bônus ativo" (o jogo ainda não mandou nenhum fim) e não mais "te vê a/b" nem "+X%"', /PokeIdle: sem bônus ativo/.test(sr().querySelector('.chips').textContent) && !/te vê|\+20/.test(sr().querySelector('.chips').textContent));
+  ok('cards: só a tag "PokeIdle" (sem "jogo te vê ✓" nem "jogo ainda não viu")', [...sr().querySelectorAll('.card')].some((c) => /dersin2k/.test(c.textContent) && /PokeIdle/.test(c.textContent)) && ![...sr().querySelectorAll('.card')].some((c) => /te vê|ainda não viu/.test(c.textContent)));
 
   // modo "só chat": nunca toca
   const card = (l) => [...sr().querySelectorAll('.card')].find((c) => c.querySelector('.nome').firstChild.textContent === l);
@@ -150,7 +151,7 @@ function chromeFalso(store, ouvintes) {
 
   // ajustes com explicação e rodada 20
   [...sr().querySelectorAll('.aba')].find((b) => b.textContent === 'Ajustes').click(); await espera(10);
-  ok('aba Ajustes aparece e tem os 8 ajustes com explicação', sr().querySelector('.aba-aj').style.display === '' && sr().querySelectorAll('.aba-aj .aj small').length === 8);
+  ok('aba Ajustes aparece e tem os 9 ajustes com explicação (inclui o Resgate automático do bônus)', sr().querySelector('.aba-aj').style.display === '' && sr().querySelectorAll('.aba-aj .aj small').length === 9);
   ok('ajustes em 3 grupos', sr().querySelectorAll('.aba-aj .grupo').length === 3);
   ok('lista com seções (valendo / esperando / offline)', [...sr().querySelectorAll('.secao')].length >= 2);
   ok('ícones em SVG (sem emoji de olho)', !/👁|◌/.test(sr().textContent) && sr().querySelectorAll('.bts svg').length > 0);

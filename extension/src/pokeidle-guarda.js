@@ -4,21 +4,39 @@
   if (!P || P.guardaPokeidle) return;
   P.guardaPokeidle = true;
   let ultimo = '', ultimaGravacao = 0;
+  // Desde 2026-11-04 o jogo vende o bônus da Twitch por resgate (como a Kick): o bloco traz `bonus` {xp, captura, shiny}
+  // com o FIM de cada bônus em ms, `minutos` por resgate, `recompensas` e, em cada canal oficial, `ativo` (o streamer
+  // autorizou e as 3 recompensas existem) e `aoVivo`. O formato antigo (`bonus` booleano por canal, `lives`,
+  // `assistindoEm`, `pctAtual`) continua aceito.
   const lista = (arr) => (Array.isArray(arr) ? arr : []).slice(0, 200)
-    .map((x) => ({ login: String((x && x.login) || '').toLowerCase(), nome: String((x && (x.nome || x.login)) || ''), bonus: !!(x && x.bonus) }))
+    .map((x) => {
+      const o = { login: String((x && x.login) || '').toLowerCase(), nome: String((x && (x.nome || x.login)) || ''),
+        bonus: !!(x && (x.ativo !== undefined ? x.ativo : x.bonus)) }; // `ativo` (formato novo) manda; `bonus` é o formato antigo
+      if (x && x.ativo !== undefined) o.ativo = !!x.ativo;
+      if (x && x.aoVivo !== undefined) o.aoVivo = !!x.aoVivo;
+      return o;
+    })
     .filter((x) => P.loginValido(x.login));
+  const mapaBonus = (b) => (b && typeof b === 'object' && !Array.isArray(b)
+    ? Object.fromEntries(Object.entries(b).slice(0, 10).map(([k, v]) => [String(k), Number(v) || 0])) : undefined);
   window.addEventListener('message', (e) => {
     if (e.source !== window || !e.data || e.data.plateia !== 'pokeidle-twitch') return;
     const tw = e.data.tw;
     const obj = tw ? {
-      vinculado: !!tw.login,
+      vinculado: tw.vinculado !== undefined ? !!tw.vinculado : !!tw.login,
       login: String(tw.login || '').toLowerCase(),
       assistindo: !!tw.assistindo,
-      pct: Number(tw.pctAtual) || 0,
+      pct: Number(tw.pct !== undefined ? tw.pct : tw.pctAtual) || 0,
       lives: lista(tw.lives),
       oficiais: lista(tw.oficiais),
       assistindoEm: (Array.isArray(tw.assistindoEm) ? tw.assistindoEm : []).map((s) => String(s).toLowerCase()).filter(P.loginValido)
     } : { vinculado: false, login: '', assistindo: false, pct: 0, lives: [], oficiais: [], assistindoEm: [] };
+    if (tw) {
+      const bonus = mapaBonus(tw.bonus);
+      if (bonus) obj.bonus = bonus; // sem o campo = o jogo não informou o fim (a sala estima pelas compras)
+      if (tw.minutos !== undefined) obj.minutos = Number(tw.minutos) || 0;
+      if (Array.isArray(tw.recompensas)) obj.recompensas = tw.recompensas.slice(0, 10).map((r) => ({ tipo: String((r && r.tipo) || ''), custo: Number(r && r.custo) || 0 }));
+    }
     const chave = JSON.stringify(obj);
     if (chave === ultimo && Date.now() - ultimaGravacao < 60000) return;
     ultimo = chave; ultimaGravacao = Date.now();

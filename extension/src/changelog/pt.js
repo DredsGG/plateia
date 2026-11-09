@@ -5,6 +5,13 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.4': [
+      "Twitch: a Plateia agora compra sozinha o bônus do PokeIdle com os pontos do canal. Para cada bônus, a recompensa de 10 h, nesta ordem: XP, Capture Boost e Secret Lure.",
+      "Só compra se o saldo do canal cobre, se a Twitch vinculada no jogo é a mesma da conta aberta e se o bônus está para acabar (menos de 1 h). Nada de empilhar horas à toa.",
+      "A aba PokeIdle da sala da Twitch mostra os bônus ativos com a hora de fim, a próxima compra, o saldo de cada canal e os últimos resgates. Tem o botão Pausar e o ajuste \"Resgate automático do bônus\", ligado de fábrica.",
+      "Se algo der errado (botão sumiu, nome ou custo diferentes, saldo que não caiu), a compra para por 15 minutos e a aba mostra o motivo.",
+      "A lista de canais com bônus do jogo voltou a aparecer na Twitch (o jogo mudou o formato em novembro)."
+    ],
     '0.9.3': [
       'Novo botão Apoiar ♥ no rodapé da sala, opcional: Pix (Brasil) com QR Code feito na própria Plateia ou GitHub Sponsors (outros países).',
       'Nada muda para quem não apoia: o quadro só abre se você clicar.'

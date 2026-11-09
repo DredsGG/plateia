@@ -10,8 +10,8 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4)
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
-![Version](https://img.shields.io/badge/version-0.9.3-9146FF)
-![Tests](https://img.shields.io/badge/tests-261%20passing-2e7d32)
+![Version](https://img.shields.io/badge/version-0.9.4-9146FF)
+![Tests](https://img.shields.io/badge/tests-303%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
@@ -40,7 +40,14 @@ The extension knows which site it's on. **Twitch** and **Kick** each get their o
 - **Keeps counting minimized.** Chrome pauses any video that never played with sound once its window is hidden, and the room's lives are always muted, so a minimized room used to stop earning (Twitch paused the lives, Kick stopped counting watch time). In the room's lives only, Plateia now keeps the page "visible" to the site, runs its timers on a Worker so they aren't throttled, and gives each live an inaudible sound touch (volume 0.0001 for an instant, then muted again) so Chrome doesn't pause it. Your volume isn't changed. If the browser refuses sound before any click, the room shows **"Click the room to keep counting minimized"**; one click anywhere in the room is enough.
 - **Add channels** by name or link, from the channels you follow that are live, or from the game below. **Clear list** (asks for a second click) and **PokeIdle channels only** start the list over.
 - **Settings tab** (*Ajustes*), in three groups with on/off switches: number of slots, rotation on/off, minutes per round, 160p for the room's lives; chat presence and follow PokeIdle's channels; chest and Drops on autopilot.
-- **PokeIdle bonus.** [PokeIdle](https://pokeidle.io) gives an XP bonus for being in the chat of its partner streams. With the game open in a tab, Plateia reads the list of bonus channels from the game itself (read only, it never sends anything to the game), keeps them on the list and shows whether the game already sees you on each one.
+- **PokeIdle bonus.** Since 2026-11-04 [PokeIdle](https://pokeidle.io) sells its Twitch bonus for channel points, like its Kick one: each redemption of a PokeIdle reward on an official channel adds hours of +15% (XP, Capture Boost or Secret Lure), and the hours add up. Just sitting in the chat no longer earns anything, and the points only come with the video playing on the channel page. With the game open in a tab, Plateia reads the official channels and the end time of each bonus from the game itself (read only, it never sends anything to the game) and keeps those channels on the list.
+- **Automatic bonus redemption** (v0.9.4). For each of the three bonuses Plateia buys the **10 h** reward, in this order: XP (3,000), Capture Boost (5,000), Secret Lure (10,000), one at a time and only when that channel's balance covers it. It does it by **clicking the page's own points panel inside the room's live** (the hidden 2×2 px iframe), not by calling the redemption API: open the panel, click the reward, click *Redeem*. Guard rails:
+  - only on official channels with the rewards active, only with the game linked to **the same Twitch account** that is open, and only with game data from the last 30 minutes;
+  - it checks the reward's exact name (with the "(10h)" suffix) and its cost in the list **and** on the *Redeem* button before clicking, and never buys above 10,000 points;
+  - it only buys a bonus with **less than 1 hour left** (no stacking), using the end time the game reports and its own redemption log;
+  - one purchase at a time with a random 3–5 s pause, a lock so two calls (or two open rooms) make one purchase, and it pauses on an urgent release;
+  - it confirms by the effect (the channel balance dropped by the cost, or the "<login> redeemed ..." line showed up in the chat); any error (button gone, different name or cost, balance didn't drop) **stops everything for 15 minutes** and the PokeIdle tab shows why;
+  - an on/off switch in Settings (*Resgate automático do bônus*, on by default) and a Pause button in the PokeIdle tab.
 
 ### Kick
 
@@ -56,12 +63,12 @@ Kick has no chest to click: points drop by themselves (10 every 5 minutes watche
 
 <img src="docs/plateia-kick-room.png" width="900" alt="Plateia Kick room: header with live counters, points gained, PokeIdle bonus hours and Daily Reward progress; on the left the PokeIdle summary (official channels live, active bonuses, points left for the next bundle) and the channels split into Earning now, Live waiting and Offline, with balance, bundle cost and Fixed / Queue / Off modes; on the right the two lives earning points">
 
-<img src="docs/plateia-pokeidle-tab.png" width="320" alt="PokeIdle tab: Twitch bonus with the three bonus lives that already see you; Kick active bonuses with end time, and the bundle progress per channel with a time estimate">
+<img src="docs/plateia-twitch-redeem.png" width="320" alt="PokeIdle tab in the Twitch room (Portuguese UI): active bonuses with their end time, automatic redemption on with a Pause button, and the latest redemptions with the points spent">
 
-- **Twitch:** current bonus (15% + 2.5% per extra live) and which bonus lives already see you.
+- **Twitch:** active bonuses with their end time (a `~` means estimated from Plateia's own redemptions), the next purchase and how many points each channel still needs, the latest redemptions and, if redemption stopped, why and until when.
 - **Kick:** active bonus hours (until when), bundle progress per channel with a time estimate, last redemptions.
 
-<sub>Kick room and PokeIdle tab with demo data (simulated Kick and PokeIdle, made-up names).</sub>
+<sub>Kick room with demo data (simulated Kick and PokeIdle, made-up names); PokeIdle tab from the end-to-end test on a simulated Twitch.</sub>
 
 ### Tutorial, what's new and update notices
 
@@ -101,6 +108,7 @@ Before writing the room I measured how Twitch actually behaves, on a live accoun
 - With 4 lives open, only **2** earned points. A live in a 2×2 px iframe still earns points and chests.
 - Drops progress on one channel at a time, so the room doesn't try to speed them up.
 - On Kick, 4 lives playing for 11 minutes: only **2** earned points. `kick.com/<channel>` can be framed by a kick.com page, so the room works the same way.
+- The points panel works inside a 2×2 px hidden iframe of the channel page: the widget mounts, the panel opens with every reward, the detail screen shows *Redeem <cost>*, and a click buys. The reward's name is the `alt` of its image (the button has no `aria-label`) and the cost is in `.reward-icon__cost`. The widget takes 10–15 s to appear after the page loads. The PokeIdle rewards are, per bonus: 1 h, 3 h, 5 h and 10 h, all +15%, at 300 / 900 / 1,500 / 3,000 (XP), 500 / 1,500 / 2,500 / 5,000 (Capture Boost) and 1,000 / 3,000 / 5,000 / 10,000 (Secret Lure).
 - PokeIdle's Kick bonus is bought: each redemption of a PokeIdle reward on an official channel is 1 hour of +15%, and hours add up (from the game's own client code).
 
 ## Architecture
@@ -108,7 +116,7 @@ Before writing the room I measured how Twitch actually behaves, on a live accoun
 ```
 extension/
 ├── manifest.json            MV3 for every browser: background as service_worker (Chromium) and scripts (Firefox),
-│                            browser_specific_settings.gecko (id plateia@dredsgg, Firefox 140+, no data collection, update_url)
+│                            browser_specific_settings.gecko (id plateia@dredsgg, Firefox 140+, no data collection)
 ├── COMO-INSTALAR.html       install / use / update guide (PT, EN and ES) with a browser picker, opens on first install
 ├── src/fundo.js             background: update check against this repo's releases (plus that release's changelog),
 │                            reload when the folder changes,
@@ -119,6 +127,8 @@ extension/
 ├── _locales/                extension description in each language
 ├── src/bau.js               every Twitch frame: clicks the chest; on the inventory page, claims Drops
 ├── src/sala.js              the Twitch room (shadow DOM): channel data, IRC presence, slots, rotation, Drops
+├── src/twitch-resgate.js    automatic PokeIdle bonus redemption on Twitch: clicks the points panel inside the room's live,
+│                            guard rails, redemption log, and the bonus/next-purchase math used by the PokeIdle tab
 ├── src/kick/kick.js         Kick: button, room, focus-mode slots, bundle redemption, Daily Reward, Drops
 ├── src/pix.js               Pix BR Code for the Support dialog (static, CRC16-CCITT), no network
 ├── src/vendor/qrcode.js     qrcode-generator 2.0.4 (MIT, license next to it) to draw the Pix QR
@@ -216,6 +226,8 @@ node teste-fundo.cjs        # background: 30-min check, 10-min floor for page re
 node teste-idiomas.cjs      # every UI string in en/es, browser-language detection, both rooms in pt/en/es, selector: 35/35
 node teste-apoio.cjs        # Support dialog: Pix codes match the reference, CRC, amounts and limits, footer order, never opens by itself, copy with and without clipboard, Esc/X/outside, focus trap, no network, pt/en/es, Kick: 44/44
 node teste-visivel.cjs      # minimized room: Worker timers, page stays visible, sound touch refused -> click -> ok, your volume intact, site sees no events, room hint: 22/22
+node teste-twitch-resgate.cjs # automatic PokeIdle redemption on Twitch against a fake points panel (list, detail, Redeem) inside the room's lives: order XP -> Capture -> Lure, no balance, wrong name or cost, no stacking, error stops 15 min (also after reopening), one purchase for concurrent calls and for two rooms, urgent pause before and mid-cycle, switch off / Pause, same-account lock, official channels only, 10,000 cap, the game's block in the new and old formats, pt/en/es: 67/67
+node rodar-todos.cjs        # runs every teste-*.cjs and adds up the OK / FAILED lines: 303 OK
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10
@@ -223,6 +235,9 @@ node e2e-regra14.mjs ../extension /tmp <pt-BR|en-US|es|fr>   # notices and langu
 node e2e-insistente.mjs /path/to/copy-of-extension /tmp     # page already open: new release, snooze and return, back-to-tab check, URGENTE pause until updated: 16/16
 
 node e2e-apoio.mjs ../extension /tmp/out              # Support dialog in real Chromium: prints in pt/en/es on both paths, Esc closes, Sponsors opens in a new tab, no network
+
+# automatic redemption in real Chromium with the extension loaded and a FAKE Twitch (all network intercepted, no real point is spent): three purchases in order, hidden 2x2 px lives, wrong reward name stops, no stacking: 13 checks
+PW_DIR=/path/with/node_modules/playwright ./e2e-twitch-resgate.sh ../extension /tmp/out   # the .sh opens Chrome and connects over CDP (on Windows Node can't spawn Playwright's chrome.exe); without CDP the .mjs launches Chromium itself
 
 # Firefox: Mozilla's linter, self-distribution rules (0 errors)
 npx web-ext lint --source-dir ../extension --self-hosted

@@ -16,6 +16,7 @@
     presencaChat: true,   // entra no chat de todos os canais escolhidos
     qualidadeBaixa: true, // players da sala em 160p
     seguirPokeidle: true, // põe na lista os canais oficiais do PokeIdle com bônus (lidos do jogo)
+    resgateAuto: true,    // compra sozinha o bônus de 10 h do PokeIdle (XP, Capture, Lure) com os pontos do canal
     pkIgnorar: []         // canais do PokeIdle que você tirou da lista na mão
   };
 

@@ -30,7 +30,7 @@ let falhas = 0; const ok = (n, c) => { console.log((c ? 'OK     ' : 'FALHOU ') +
     close() {}
   };
   for (const f of JSON.parse(require('fs').readFileSync(require('path').join(raiz, 'manifest.json'), 'utf8')).content_scripts[0].js) w.eval(ler(f));
-  await espera(400);
+  await espera(2000); // 400 ms era curto e o teste falhava em PC ocupado (2026-11-09)
   const chip = () => [...w.document.getElementById('plateia-sala').shadowRoot.querySelectorAll('.chip')].find((c) => /no chat/.test(c.textContent)).textContent;
   ok('primeira rodada: 3/4 no chat (um JOIN foi descartado)', /no chat 3\/4/.test(chip()));
   // 31 s depois, o vigia pede de novo

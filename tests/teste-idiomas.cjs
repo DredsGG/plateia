@@ -14,7 +14,7 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 // ---------- 1) cobertura das traduções (estático) ----------
 const chaves = new Set();
 const lit = /'((?:[^'\\]|\\.)*)'/g;
-for (const f of ['src/ui.js', 'src/sala.js', 'src/kick/kick.js', 'src/pokeidle-painel.js']) {
+for (const f of ['src/ui.js', 'src/sala.js', 'src/kick/kick.js', 'src/pokeidle-painel.js', 'src/twitch-resgate.js']) {
   const s = ler(f);
   const re = /(?:\btr|P\.t)\(\s*('(?:[^'\\]|\\.)*'|[^,)]+\?\s*'(?:[^'\\]|\\.)*'\s*:\s*'(?:[^'\\]|\\.)*')/g;
   let m;

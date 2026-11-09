@@ -5,6 +5,13 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.es = {
+    '0.9.4': [
+      "Twitch: Plateia ahora compra sola el bonus de PokeIdle con los puntos del canal. Para cada bonus, la recompensa de 10 h, en este orden: XP, Capture Boost y Secret Lure.",
+      "Solo compra si el saldo del canal alcanza, si la cuenta de Twitch vinculada en el juego es la que está abierta y si el bonus está por terminar (menos de 1 h). Nada de acumular horas sin sentido.",
+      "La pestaña PokeIdle de la sala de Twitch muestra los bonus activos con su hora de fin, la próxima compra, el saldo de cada canal y los últimos canjes. Tiene el botón Pausar y el ajuste \"Canje automático del bonus\", activado de fábrica.",
+      "Si algo sale mal (botón desaparecido, nombre o costo distintos, saldo que no bajó), la compra se detiene 15 minutos y la pestaña muestra el motivo.",
+      "La lista de canales con bonus del juego vuelve a aparecer en Twitch (el juego cambió el formato en noviembre)."
+    ],
     '0.9.3': [
       'Nuevo botón Apoyar ♥ en el pie de la sala, opcional: Pix (Brasil) con código QR hecho por la propia Plateia o GitHub Sponsors (otros países).',
       'Nada cambia si no apoyas: el cuadro solo se abre si haces clic.'

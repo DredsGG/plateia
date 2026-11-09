@@ -5,6 +5,13 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.4': [
+      "Twitch: Plateia now buys the PokeIdle bonus by itself with channel points. For each bonus, the 10 h reward, in this order: XP, Capture Boost and Secret Lure.",
+      "It only buys if the channel balance covers it, if the Twitch account linked in the game is the one open here, and if the bonus is about to run out (less than 1 h left). No pointless stacking of hours.",
+      "The PokeIdle tab of the Twitch room shows the active bonuses with their end time, the next purchase, each channel's balance and the latest redemptions. It has a Pause button and the \"Auto-redeem the bonus\" setting, on by default.",
+      "If anything goes wrong (button gone, different name or cost, balance did not drop), buying stops for 15 minutes and the tab shows why.",
+      "The game's list of bonus channels shows up on Twitch again (the game changed its format in November)."
+    ],
     '0.9.3': [
       'New Support ♥ button in the room footer, optional: Pix (Brazil) with a QR code made by Plateia itself, or GitHub Sponsors (other countries).',
       'Nothing changes if you don\'t support: the box only opens when you click.'

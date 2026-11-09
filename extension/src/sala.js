@@ -108,6 +108,41 @@
     let pkk = await P.ler('pokeidleKick', null); // bloco "kick" do PokeIdle (só para mostrar; a parte da Kick vem depois)
     const inicioSessao = Date.now();
 
+    // ----- resgate automático do bônus do PokeIdle (src/twitch-resgate.js) -----
+    // Clica na interface da própria página, dentro da live da sala que vale (iframe). Saldo vem da consulta de leitura.
+    async function lerSaldo(login) {
+      if (!P.loginValido(login)) return null;
+      const j = await P.gql({ query: `query{c0:user(login:"${login}"){channel{self{communityPoints{balance}}}}}` });
+      const u = j && j.data && j.data.c0;
+      const s = u && u.channel && u.channel.self && u.channel.self.communityPoints ? u.channel.self.communityPoints.balance : null;
+      if (typeof s !== 'number') return null;
+      info[login] = Object.assign(info[login] || {}, { saldo: s });
+      return s;
+    }
+    const frameProntoPara = (fr) => Date.now() - (Number(fr.dataset.pronto) || Number(fr.dataset.criado) || Date.now()) >= P.twitchResgate.TEMPOS.folga;
+    const resgate = P.twitchResgate.criar({
+      cfg: () => cfg, pk: () => pk, eu: () => P.meuLogin(),
+      registros: await P.ler('twitchResgates', []),
+      aoMudar: () => { try { renderChips(); } catch (e) {} },
+      // só compra em canal oficial com recompensas ativas (lista do jogo); nunca por causa de `lives` de formato antigo
+      canais: () => vagasAtuais.filter((l) => ((pk && pk.oficiais) || []).some((o) => o.login === l && o.bonus) && iframes.has(l) && frameProntoPara(iframes.get(l)))
+        .map((l) => ({ login: l, saldo: (info[l] || {}).saldo, frame: iframes.get(l) })),
+      lerSaldo
+    });
+    P.salaTwitchResgate = resgate; // usado pelos testes
+    function talvezResgatar() { if (salaAtiva) resgate.tentar().catch(() => {}); }
+    // dados da aba PokeIdle: bônus ativos com fim, próxima compra, saldo por canal, últimos resgates e o erro
+    function dadosResgate() {
+      const canais = pkComBonus().filter((l) => cfg.canais.some((c) => c.login === l))
+        .map((l) => ({ login: l, nome: (info[l] || {}).nome || l, saldo: (info[l] || {}).saldo, tocando: vagasAtuais.includes(l), aoVivo: aoVivo(l) }));
+      const est = resgate.estado();
+      return Object.assign(P.twitchResgate.resumo({ pk, regs: resgate.registros(), canais }), {
+        ligado: cfg.resgateAuto !== false, pausado: est.pausado, bloqueadoAte: est.bloqueadoAte, erro: est.erro, aviso: est.aviso,
+        impedimento: est.impedimento, regs: resgate.registros().slice(0, 6),
+        onPausar: () => { resgate.pausar(); renderAbas(); renderChips(); }
+      });
+    }
+
     // ----- montagem -----
     const host = h('div', { id: 'plateia-sala' });
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483000';
@@ -168,6 +203,8 @@
         [tr('Baú / Drops automáticos'), (cfg.bauAuto ? tr('sim') : tr('não')) + ' / ' + (cfg.dropsAuto ? tr('sim') : tr('não'))],
         [tr('Lives em 160p'), cfg.qualidadeBaixa ? tr('sim') : tr('não')],
         ['PokeIdle', pk ? (pk.vinculado ? tr('vinculado') : tr('não vinculado')) + ' · ' + tr('{n} canais com bônus · dados de {m} min', { n: pkComBonus().length, m: Math.round(pkIdade() / 60000) }) : tr('sem dados do jogo')],
+        [tr('Resgate automático'), (cfg.resgateAuto !== false ? tr('ligado') : tr('desligado')) + (resgate.estado().erro ? ' · ' + tr('parado após erro') : '')],
+        [tr('Resgates em 24 h'), (() => { const r24 = resgate.registros().filter((r) => r.em > Date.now() - 24 * 3600e3); return tr('{a} ok, {b} falharam', { a: r24.filter((r) => r.ok).length, b: r24.filter((r) => !r.ok).length }); })()],
         [tr('Drops em andamento'), String(drops.length)],
         [tr('Erro da Twitch'), erroGql || tr('nenhum')],
       ];
@@ -214,12 +251,6 @@
       salvar();
       sincronizarPokeidle();
       render();
-    }
-    function pkPct() {
-      const v = pk && Number(pk.pct) || 0;
-      if (!v) return '';
-      const p = v <= 1 ? v * 100 : v;
-      return '+' + (Math.round(p * 10) / 10).toLocaleString(P.local()) + '%';
     }
     function remover(login) {
       const c = cfg.canais.find((x) => x.login === login);
@@ -300,6 +331,7 @@
         erroGql = '';
       } catch (e) { erroGql = String(e.message || e); }
       aplicarVagas(); renderLeve();
+      talvezResgatar();
     }
 
     // ----- Drops -----
@@ -394,6 +426,8 @@
         qualidadeBaixaPorUmTempo();
         const fr = h('iframe', { src: 'https://www.twitch.tv/' + login, title: login, allow: 'autoplay; fullscreen' });
         fr.dataset.login = login;
+        fr.dataset.criado = String(Date.now());
+        fr.addEventListener('load', () => { fr.dataset.pronto = String(Date.now()); }); // o resgate espera a página montar o widget de pontos
         iframes.set(login, fr);
         els.palco.appendChild(fr);
       }
@@ -480,17 +514,20 @@
       const fila = filaRodizio();
       const livres = vagasN() - fixosVivos().length;
       const gira = cfg.rodizio && livres > 0 && fila.length > livres;
-      const pkVivos = pkComBonus().filter((l) => info[l] && info[l].aoVivo);
-      const pkVe = pk ? pkVivos.filter((l) => (pk.assistindoEm || []).includes(l)).length : 0;
+      // bônus do PokeIdle na Twitch = horas compradas com pontos do canal: o chip mostra os bônus ativos (e o resgate parado, se houver)
+      const bonusAtivos = pk && pk.vinculado ? P.twitchResgate.bonusAtivos(pk, resgate.registros()) : [];
+      const maiorBonus = bonusAtivos.length ? Math.max(...bonusAtivos.map((b) => b.ate)) - Date.now() : 0;
+      const estResgate = resgate.estado();
       repor(els.chips,
         chip(tr('{v}/{t} ao vivo', { v: vivos, t: total }), '', tr('Canais da sua lista que estão ao vivo agora / total de canais na lista')),
         chip(tr('no chat {n}/{t}', { n: noChat.size, t: total }), cfg.presencaChat ? (ircPronto ? 'ok' : 'alerta') : 'off',
-          cfg.presencaChat ? (ircErro || tr('Em quantos canais da lista você está dentro do chat (aparece na lista de quem está no chat; é isso que o PokeIdle confere)')) : tr('Presença no chat desligada')),
+          cfg.presencaChat ? (ircErro || tr('Em quantos canais da lista você está dentro do chat (aparece na lista de quem está no chat)')) : tr('Presença no chat desligada')),
         chip(tr('valendo {n}/{t}', { n: vagasAtuais.length, t: vagasN() }), vagasN() > 2 ? 'alerta' : 'ok', tr('Lives tocando de verdade agora / vagas. Só essas ganham pontos e baú')),
         gira ? (els.relogio = chip(tempoRodada(), 'relogio', tr('Tempo até o rodízio trocar as lives que estão valendo'))) : (els.relogio = null),
         chip(tr('+{p} pts · {b} baús', { p: fmt(ganho), b: nBaus }), 'ok', tr('Pontos ganhos e baús pegos desde que a sala abriu')),
-        pk && pk.vinculado && pkVivos.length ? chip(`PokeIdle${pkPct() ? ' ' + pkPct() : ''} · ` + tr('te vê {a}/{b}', { a: pkVe, b: pkVivos.length }), pkVe ? 'ok' : 'alerta',
-          tr('Em quantos canais oficiais ao vivo o PokeIdle já te reconheceu / canais oficiais com bônus ao vivo. O jogo confere de tempos em tempos')) : null,
+        pk && pk.vinculado ? chip(bonusAtivos.length ? tr('PokeIdle: {n} bônus · {d}', { n: bonusAtivos.length, d: P.ui.duracao(maiorBonus) }) : tr('PokeIdle: sem bônus ativo'), bonusAtivos.length ? 'ok' : '',
+          tr('Bônus da Twitch no PokeIdle (horas compradas com os pontos do canal)')) : null,
+        estResgate.erro ? chip(tr('resgate parado até {h}', { h: P.ui.hhmm(estResgate.bloqueadoAte) }), 'alerta', estResgate.erro) : null,
         som.negado() ? chip(tr('Clique na sala para contar minimizada'), 'alerta', tr('O navegador só deixa as lives seguirem com a janela minimizada depois de um clique na sala. Clique em qualquer lugar aqui uma vez.')) : null,
         P.pausado() ? chip(tr('Pausada: atualização urgente'), 'alerta', tr('Atualize a Plateia para voltar a pegar pontos, baú e Drops')) : null,
         erroGql ? chip('Twitch: ' + erroGql, 'alerta', tr('A consulta de dados à Twitch falhou; a sala tenta de novo a cada minuto')) : null);
@@ -538,10 +575,7 @@
             nB ? ' · ' + (nB > 1 ? tr('{n} baús', { n: nB }) : tr('{n} baú', { n: nB })) : null),
           h('div', { class: 'tags' },
             noChat.has(c.login) ? h('span', { class: 'tag t2', title: tr('Você está no chat deste canal') }, tr('chat ✓')) : null,
-            ehPk ? h('span', { class: 'tag t3', title: tr('Canal oficial do PokeIdle com bônus (lido do jogo)') }, 'PokeIdle') : null,
-            ehPk && pk && i.aoVivo ? ((pk.assistindoEm || []).includes(c.login)
-              ? h('span', { class: 'tag t2', title: tr('O PokeIdle já te reconheceu neste canal') }, tr('jogo te vê ✓'))
-              : h('span', { class: 'tag', title: tr('O PokeIdle ainda não te reconheceu aqui. Ele confere de tempos em tempos; com o chat ✓ deve aparecer em alguns minutos') }, tr('jogo ainda não viu'))) : null)),
+            ehPk ? h('span', { class: 'tag t3', title: tr('Canal oficial do PokeIdle com bônus (lido do jogo)') }, 'PokeIdle') : null)),
         h('div', { class: 'lado' },
           h('div', { class: 'bts' },
             i.aoVivo && !tocando && modo(c) !== 'chat'
@@ -584,7 +618,7 @@
       els.abaCanais.style.display = aba === 'canais' ? '' : 'none';
       els.abaPk.style.display = aba === 'pokeidle' ? '' : 'none';
       els.abaAj.style.display = aba === 'ajustes' ? '' : 'none';
-      if (aba === 'pokeidle' && P.painelPokeidle) repor(els.abaPk, P.painelPokeidle({ pk, pkk, plataforma: 'twitch' }));
+      if (aba === 'pokeidle' && P.painelPokeidle) repor(els.abaPk, P.painelPokeidle({ pk, pkk, plataforma: 'twitch', twitch: dadosResgate() }));
     }
     function renderPokeidle() {
       if (aba === 'pokeidle') renderAbas();
@@ -605,7 +639,6 @@
       repor(els.pk,
         h('div', { class: 'st' }, h('b', {}, 'PokeIdle'),
           ' · ' + tr('{n} canais com bônus, {v} ao vivo', { n: pkComBonus().length, v: vivos.length }),
-          pkPct() ? ' · ' + tr('seu bônus {p}', { p: pkPct() }) : null,
           min > 10 ? ' · ' + tr('dados de {m} min atrás (abra o jogo)', { m: min }) : null),
         !pk.vinculado ? h('p', { class: 'aviso' }, tr('Sua conta do PokeIdle não está vinculada à Twitch. Vincule no jogo (Bônus Twitch) para o bônus contar.')) : null,
         pk.vinculado && eu && pk.login && pk.login !== eu ? h('p', { class: 'aviso' }, tr('O PokeIdle está vinculado a "{a}", mas a Twitch aberta aqui é "{b}". O bônus só conta na conta vinculada.', { a: pk.login, b: eu })) : null,
@@ -630,8 +663,9 @@
           linha(tr('Minutos por rodada'), num('rodizioMin', 10, 120), tr('Tempo que cada par fica valendo antes de passar a vez. Mínimo 10 (pontos a cada 5 min, baú a cada ~15).')),
           linha(tr('Lives da sala em 160p'), chk('qualidadeBaixa'), tr('Lives da sala na menor qualidade: menos internet e PC. Sua Twitch normal não muda.'))),
         grupo(tr('Presença e PokeIdle'),
-          linha(tr('Presença no chat de todos'), chk('presencaChat'), tr('Entra no chat de todos os canais da lista, sem vídeo. É o que o PokeIdle usa para o bônus.')),
-          linha(tr('Seguir canais do PokeIdle'), chk('seguirPokeidle'), tr('Põe e tira da lista, sozinho, os canais oficiais com bônus que o jogo mostra (precisa do jogo aberto numa aba).'))),
+          linha(tr('Presença no chat de todos'), chk('presencaChat'), tr('Entra no chat de todos os canais da lista, sem vídeo.')),
+          linha(tr('Seguir canais do PokeIdle'), chk('seguirPokeidle'), tr('Põe e tira da lista, sozinho, os canais oficiais com bônus que o jogo mostra (precisa do jogo aberto numa aba).')),
+          linha(tr('Resgate automático do bônus'), chk('resgateAuto'), tr('Compra sozinha a recompensa de 10 h de cada bônus do PokeIdle (XP, Capture Boost e Secret Lure, nessa ordem) quando o saldo do canal cobre e o bônus está acabando. Só com a Twitch vinculada no jogo.'))),
         grupo(tr('Automático'),
           linha(tr('Baú automático'), chk('bauAuto'), tr('Clica no baú de +50 pontos assim que aparece, na sala e em qualquer aba da Twitch.')),
           linha(tr('Drops automáticos'), chk('dropsAuto'), tr('Resgata o Drop quando chega a 100%.'))));
@@ -642,9 +676,10 @@
     P.aoMudar((m) => {
       if (m.baus) { baus = m.baus.newValue || {}; renderLeve(); }
       if (m.dropsResgatados) { dropsResgatados = m.dropsResgatados.newValue || []; renderDrops(); }
-      if (m.pokeidle) { pk = m.pokeidle.newValue || null; sincronizarPokeidle(); renderLeve(); }
+      if (m.pokeidle) { pk = m.pokeidle.newValue || null; sincronizarPokeidle(); renderLeve(); talvezResgatar(); }
+      if (m.twitchResgates) { resgate.definirRegistros(m.twitchResgates.newValue || []); renderLeve(); }
       if (m.pokeidleKick) { pkk = m.pokeidleKick.newValue || null; renderPokeidle(); }
-      if (m.atualizacao) { const p = P.urgentePendente(m.atualizacao.newValue); if (p !== pausadaAgora) { pausadaAgora = p; aplicarVagas(); sincronizarChat(); renderLeve(); } }
+      if (m.atualizacao) { const p = P.urgentePendente(m.atualizacao.newValue); if (p !== pausadaAgora) { pausadaAgora = p; aplicarVagas(); sincronizarChat(); renderLeve(); if (!p) talvezResgatar(); } }
     });
     let pausadaAgora = P.pausado();
 
@@ -654,7 +689,7 @@
       iframes.clear();
       if (irc) irc.close();
       restaurarQualidade();
-      clearInterval(t1); clearInterval(t2); clearInterval(t3); clearInterval(t4); clearInterval(t5);
+      clearInterval(t1); clearInterval(t2); clearInterval(t3); clearInterval(t4); clearInterval(t5); clearInterval(t6);
       host.remove();
       delete document.documentElement.dataset.plateia;
       if (document.body) document.body.style.overflow = '';
@@ -680,6 +715,7 @@
       if (els.tempoSecao && els.tempoSecao.isConnected) els.tempoSecao.textContent = tempoRodada();
     }, 1000);
     const t3 = setInterval(verDrops, 120000);
+    const t6 = setInterval(talvezResgatar, 30000); // o resgate confere a cada 30 s (a trava impede duas compras juntas)
     // vigia do chat: a cada minuto confere se está em todos os canais; conexão muda há 6 min = reconecta
     const t5 = setInterval(() => {
       if (irc && ircPronto && ultimaMsgIrc && Date.now() - ultimaMsgIrc > 6 * 60000) { try { irc.close(); } catch (e) {} return; }
