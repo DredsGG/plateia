@@ -1,12 +1,10 @@
 // Botão "Apoiar ♥" no Chromium de verdade, com a extensão real: prints do quadro (Brasil e outro país) em PT, EN e ES
 // e print do QR de cada valor para decodificar depois (python decodifica e compara com o código).
 // node e2e-apoio.mjs <pasta da extensão> <pasta de saída>
-import { chromium } from 'playwright';
-import os from 'os';
-import path from 'path';
+import { chromium } from './pw.mjs';
 import fs from 'fs';
 const [EXT, OUT] = process.argv.slice(2);
-const ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'pw-apoio-' + Date.now()), {
+const ctx = await chromium.launchPersistentContext('/tmp/claude-0/pw-apoio-' + Date.now(), {
   channel: 'chromium', headless: true, viewport: { width: 1440, height: 860 }, locale: 'pt-BR', deviceScaleFactor: 2,
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--lang=pt-BR', '--no-proxy-server'],
 });

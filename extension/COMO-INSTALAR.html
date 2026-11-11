@@ -32,7 +32,7 @@
   .navs button:hover{border-color:var(--roxo)}
   .navs button.on{background:var(--roxo);border-color:var(--roxo);color:#fff}
   .nav-bloco{display:none}
-  body[data-nav=chrome] .nav-bloco[data-nav=chrome],body[data-nav=edge] .nav-bloco[data-nav=edge],body[data-nav=brave] .nav-bloco[data-nav=brave],body[data-nav=opera] .nav-bloco[data-nav=opera],body[data-nav=firefox] .nav-bloco[data-nav=firefox]{display:block}
+  body[data-nav=chrome] .nav-bloco[data-nav=chrome],body[data-nav=edge] .nav-bloco[data-nav=edge],body[data-nav=brave] .nav-bloco[data-nav=brave],body[data-nav=opera] .nav-bloco[data-nav=opera]{display:block}
   h3{margin:14px 0 4px;font-size:16px}
   .perm{border:2px solid #e5484d}
   .perm-bt{border:0;border-radius:8px;background:#e5484d;color:#fff;padding:9px 16px;font:700 15px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
@@ -62,9 +62,9 @@
   <section id="permissoes" class="perm" hidden>
     <h2 data-lang="pt">Falta a permissão dos sites</h2><h2 data-lang="en">Site access is missing</h2>
     <h2 data-lang="es">Falta el permiso de los sitios</h2>
-    <p data-lang="pt">A Plateia precisa acessar twitch.tv e kick.com para mostrar o botão e as salas. No Firefox essa permissão pode ser desligada em about:addons.</p>
-    <p data-lang="en">Plateia needs access to twitch.tv and kick.com to show its button and rooms. On Firefox this permission can be turned off in about:addons.</p>
-    <p data-lang="es">Plateia necesita acceso a twitch.tv y kick.com para mostrar su botón y las salas. En Firefox este permiso se puede desactivar en about:addons.</p>
+    <p data-lang="pt">A Plateia precisa acessar twitch.tv e kick.com para mostrar o botão e as salas. Se você limitou o acesso da extensão a certos sites nas configurações do navegador, libere esses dois.</p>
+    <p data-lang="en">Plateia needs access to twitch.tv and kick.com to show its button and rooms. If you limited the extension's site access in the browser's settings, allow these two.</p>
+    <p data-lang="es">Plateia necesita acceso a twitch.tv y kick.com para mostrar su botón y las salas. Si limitaste el acceso de la extensión a ciertos sitios en la configuración del navegador, permite estos dos.</p>
     <button class="perm-bt" id="permitir"><span data-lang="pt">Permitir acesso</span><span data-lang="en">Allow access</span><span data-lang="es">Permitir acceso</span></button>
   </section>
   <section id="instalar">
@@ -73,7 +73,7 @@
     <p data-lang="pt">Escolha o seu navegador:</p><p data-lang="en">Pick your browser:</p>
     <p data-lang="es">Elige tu navegador:</p>
     <div class="navs" role="tablist">
-      <button data-nav-bt="chrome">Chrome</button><button data-nav-bt="edge">Edge</button><button data-nav-bt="brave">Brave</button><button data-nav-bt="opera">Opera GX</button><button data-nav-bt="firefox">Firefox</button>
+      <button data-nav-bt="chrome">Chrome</button><button data-nav-bt="edge">Edge</button><button data-nav-bt="brave">Brave</button><button data-nav-bt="opera">Opera GX</button>
     </div>
     <div class="nav-bloco" data-nav="chrome">
       <ol data-lang="pt">
@@ -158,44 +158,6 @@
       <p class="aviso" data-lang="en">If Plateia disappears after closing Opera GX (there are older reports of this with unpacked extensions), load the folder again with the same button.</p>
       <p class="aviso" data-lang="es">Si Plateia desaparece al cerrar Opera GX (hay reportes antiguos de esto con extensiones descomprimidas), carga la carpeta de nuevo con el mismo botón.</p>
     </div>
-    <div class="nav-bloco" data-nav="firefox">
-      <p data-lang="pt">Precisa do Firefox 140 ou mais novo.</p>
-      <p data-lang="en">Needs Firefox 140 or newer.</p>
-      <p data-lang="es">Necesita Firefox 140 o más reciente.</p>
-      <p class="aviso" data-lang="pt"><b>Por que é temporária no Firefox?</b> É burocracia da Mozilla: o Firefox normal só deixa instalar de vez extensão que a Mozilla assinou. A Plateia ainda não passou por essa assinatura, então por enquanto ela entra como <b>extensão temporária</b>: funciona igual, mas some quando você fecha o Firefox e precisa ser carregada de novo (leva 10 segundos).</p>
-      <p class="aviso" data-lang="en"><b>Why temporary on Firefox?</b> Mozilla paperwork: regular Firefox only keeps extensions that Mozilla has signed. Plateia isn't signed yet, so for now it goes in as a <b>temporary add-on</b>: it works the same, but it's removed when Firefox closes and has to be loaded again (takes 10 seconds).</p>
-      <p class="aviso" data-lang="es"><b>¿Por qué es temporal en Firefox?</b> Es burocracia de Mozilla: el Firefox normal solo conserva extensiones firmadas por Mozilla. Plateia aún no tiene esa firma, así que por ahora entra como <b>complemento temporal</b>: funciona igual, pero se quita al cerrar Firefox y hay que cargarla de nuevo (tarda 10 segundos).</p>
-      <ol data-lang="pt">
-        <li>Baixe o <code>plateia-vX.Y.Z.zip</code> em <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> e extraia numa pasta.</li>
-        <li>Abra <code>about:debugging#/runtime/this-firefox</code>.</li>
-        <li>Clique em <b>Carregar extensão temporária…</b> (<i>Load Temporary Add-on…</i>) e escolha o <code>manifest.json</code> dentro da pasta.</li>
-        <li>Toda vez que abrir o Firefox, repita os passos 2 e 3.</li>
-      </ol>
-      <ol data-lang="en">
-        <li>Download <code>plateia-vX.Y.Z.zip</code> from <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> and unzip it into a folder.</li>
-        <li>Open <code>about:debugging#/runtime/this-firefox</code>.</li>
-        <li>Click <b>Load Temporary Add-on…</b> and pick the <code>manifest.json</code> inside the folder.</li>
-        <li>Every time you open Firefox, repeat steps 2 and 3.</li>
-      </ol>
-      <ol data-lang="es">
-        <li>Descarga <code>plateia-vX.Y.Z.zip</code> desde <a href="https://github.com/DredsGG/plateia/releases/latest" target="_blank" rel="noopener noreferrer">github.com/DredsGG/plateia/releases</a> y extráelo en una carpeta.</li>
-        <li>Abre <code>about:debugging#/runtime/this-firefox</code>.</li>
-        <li>Haz clic en <b>Cargar complemento temporal…</b> y elige el <code>manifest.json</code> dentro de la carpeta.</li>
-        <li>Cada vez que abras Firefox, repite los pasos 2 y 3.</li>
-      </ol>
-      <h3 data-lang="pt">Quando o Release tiver um <code>.xpi</code></h3>
-      <h3 data-lang="en">When the release has a <code>.xpi</code></h3>
-      <h3 data-lang="es">Cuando el Release tenga un <code>.xpi</code></h3>
-      <p data-lang="pt">Se aparecer um <code>plateia-vX.Y.Z.xpi</code> no Release, é a versão assinada: clique nele, confirme <b>Adicionar</b> e pronto, fica de vez e se atualiza sozinha.</p>
-      <p data-lang="en">If a <code>plateia-vX.Y.Z.xpi</code> shows up in the release, that's the signed build: click it, confirm <b>Add</b> and it stays for good and updates itself.</p>
-      <p data-lang="es">Si aparece un <code>plateia-vX.Y.Z.xpi</code> en el Release, es la versión firmada: haz clic, confirma <b>Añadir</b> y listo, queda instalada y se actualiza sola.</p>
-      <p data-lang="pt">Firefox Developer Edition, Nightly ou ESR: em <code>about:config</code> deixe <code>xpinstall.signatures.required</code> como <b>false</b>, renomeie o zip para <code>.xpi</code> e instale em <code>about:addons</code> → engrenagem → <b>Instalar extensão de um arquivo</b>. Aí fica de vez.</p>
-      <p data-lang="en">Firefox Developer Edition, Nightly or ESR: in <code>about:config</code> set <code>xpinstall.signatures.required</code> to <b>false</b>, rename the zip to <code>.xpi</code> and install it from <code>about:addons</code> → gear → <b>Install Add-on From File</b>. Then it stays.</p>
-      <p data-lang="es">Firefox Developer Edition, Nightly o ESR: en <code>about:config</code> pon <code>xpinstall.signatures.required</code> en <b>false</b>, renombra el zip a <code>.xpi</code> e instálalo desde <code>about:addons</code> → engranaje → <b>Instalar complemento desde archivo</b>. Así queda instalada.</p>
-      <p data-lang="pt">O botão Plateia não apareceu? Em <code>about:addons</code> → Plateia → <b>Permissões</b>, ligue o acesso a twitch.tv e kick.com.</p>
-      <p data-lang="en">No Plateia button? In <code>about:addons</code> → Plateia → <b>Permissions</b>, turn on access to twitch.tv and kick.com.</p>
-      <p data-lang="es">¿No apareció el botón Plateia? En <code>about:addons</code> → Plateia → <b>Permisos</b>, activa el acceso a twitch.tv y kick.com.</p>
-    </div>
   </section>
   <section id="usar">
     <h2 data-lang="pt">2. Usar</h2><h2 data-lang="en">2. Use</h2>
@@ -243,10 +205,7 @@
     <p data-lang="pt"><b>Achou um erro?</b> Clique em <b>Relatar bug</b> no rodapé da sala: abre um relato no GitHub com a versão e um diagnóstico (só números e estados, nada da sua conta). Precisa de conta no GitHub; se não tiver, use <b>Copiar relatório</b>.</p>
     <p data-lang="en"><b>Found a bug?</b> Click <b>Report bug</b> in the room footer: it opens a report on GitHub with the version and a diagnostic (only counts and on/off states, nothing from your account). It needs a GitHub account; without one, use <b>Copy report</b>.</p>
     <p data-lang="es"><b>¿Encontraste un bug?</b> Haz clic en <b>Reportar bug</b> en el pie de la sala: abre un reporte en GitHub con la versión y un diagnóstico (solo números y estados activado/desactivado, nada de tu cuenta). Necesita cuenta de GitHub; sin ella, usa <b>Copiar reporte</b>.</p>
-    <p data-lang="pt"><b>Firefox:</b> na instalação temporária, baixe o zip novo e carregue de novo. Com o <code>.xpi</code> assinado (quando houver), a versão nova chega sozinha.</p>
     <p class="aviso" data-lang="pt">Chrome, Edge, Brave e Opera GX: não mova nem renomeie a pasta, senão o navegador perde a extensão e os ajustes. Deixe o Modo do desenvolvedor ligado: a recarga sozinha depende dele.</p>
-    <p data-lang="en"><b>Firefox:</b> with the temporary install, download the new zip and load it again. With the signed <code>.xpi</code> (when there is one), new versions arrive by themselves.</p>
-    <p data-lang="es"><b>Firefox:</b> con la instalación temporal, descarga el zip nuevo y cárgalo de nuevo. Con el <code>.xpi</code> firmado (cuando lo haya), las versiones nuevas llegan solas.</p>
     <p class="aviso" data-lang="en">Chrome, Edge, Brave and Opera GX: don't move or rename the folder, or the browser loses the extension and its settings. Keep Developer mode on: the self-reload depends on it.</p>
     <p class="aviso" data-lang="es">Chrome, Edge, Brave y Opera GX: no muevas ni renombres la carpeta, o el navegador pierde la extensión y sus ajustes. Deja el Modo de desarrollador activado: la recarga automática depende de él.</p>
   </section>

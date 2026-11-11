@@ -7,11 +7,10 @@
 //   "Atualizar" baixa o zip; quando os arquivos novos chegam na pasta (zip extraído por cima, ou
 //   gravados pela IA), a extensão percebe sozinha em até 1 min e se recarrega, sem ↻.
 // - Depois de recarregar, as abas da Twitch e da Kick recarregam (as salas reabrem sozinhas).
-// Firefox usa `browser` (promessas); Chrome, Edge, Brave e Opera usam `chrome`.
-const ext = (typeof browser !== 'undefined' && browser && browser.runtime) ? browser : chrome;
+// Chrome, Edge, Brave e Opera GX: `chrome` (o service worker MV3 já devolve promessas).
+const ext = chrome;
 const REPO = 'DredsGG/plateia';
-const ehFirefox = () => { try { return ext.runtime.getURL('').startsWith('moz-extension:'); } catch (e) { return false; } };
-// sites que a Plateia precisa (no Firefox o usuário pode tirar a permissão em about:addons)
+// sites que a Plateia precisa (o usuário pode limitar o acesso da extensão aos sites nas configurações do navegador)
 const SITES = ['https://www.twitch.tv/*', 'https://kick.com/*'];
 async function conferirPermissoes(abrirGuia) {
   try {
@@ -81,14 +80,13 @@ async function procurar() {
     const j = await r.json();
     const ultima = String(j.tag_name || '').replace(/^v/i, '');
     const zip = ((j.assets || []).find((a) => /\.zip$/i.test(a.name)) || {}).browser_download_url || null;
-    const xpi = ((j.assets || []).find((a) => /\.xpi$/i.test(a.name)) || {}).browser_download_url || null;
     const disponivel = !!ultima && cmpVer(ultima, cur) > 0;
     // Release marcado pelo André com "URGENTE" no título: aviso sem X e automação pausada até atualizar
     const urgente = disponivel && /URGENT/i.test(String(j.name || '') + ' ' + String(j.tag_name || ''));
     const antes = (await ext.storage.local.get('atualizacao')).atualizacao || {};
     const novidades = !disponivel ? null
       : antes.novidadesDe === ultima && antes.novidades ? antes.novidades : await novidadesRemotas(j.tag_name, ultima);
-    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, xpi, navegador: ehFirefox() ? 'firefox' : 'chromium', disponivel, urgente, novidades, novidadesDe: disponivel ? ultima : null, erro: null }));
+    return salvar(Object.assign(base, { ultima, notas: String(j.body || '').slice(0, 4000), pagina: j.html_url || null, zip, disponivel, urgente, novidades, novidadesDe: disponivel ? ultima : null, erro: null }));
   } catch (e) {
     return salvar(Object.assign(base, { erro: String((e && e.message) || e) }));
   }
@@ -97,19 +95,17 @@ async function procurar() {
 async function aplicar() {
   const st = (await ext.storage.local.get('atualizacao')).atualizacao || {};
   if (await tipoInstalacao() === 'normal') {
-    // Chrome: {status, version}; Firefox: {status, details}; versões antigas: [status, details]
+    // Chrome: {status, version}; versões antigas: [status, details]
     const r = await ext.runtime.requestUpdateCheck();
     const res = Array.isArray(r) ? r[0] : (r && r.status) || r;
     if (res === 'update_available') { setTimeout(() => ext.runtime.reload(), 1500); return { modo: 'loja', status: 'aplicando' }; }
     return { modo: 'loja', status: res };
   }
-  // Firefox: o .xpi assinado instala por cima (o próprio Firefox também atualiza pelo update_url).
-  // Sem .xpi no Release (temporária), baixa o zip para carregar de novo.
-  if (ehFirefox() && st.xpi) { await ext.tabs.create({ url: st.xpi, active: true }); await salvar({ baixadoEm: Date.now() }); return { modo: 'xpi', status: 'abrindo' }; }
+  // por pasta: baixa o zip do Release; extraído por cima da pasta, a extensão se recarrega sozinha
   const url = st.zip || st.pagina || `https://github.com/${REPO}/releases/latest`;
   await ext.tabs.create({ url, active: false });
   await salvar({ baixadoEm: Date.now() });
-  return { modo: 'download', status: 'baixado', navegador: ehFirefox() ? 'firefox' : 'chromium' };
+  return { modo: 'download', status: 'baixado' };
 }
 
 // por pasta: versão nova gravada na pasta (o manifest vai por último) → recarrega em 15 s

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Plateia",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "default_locale": "en",
   "description": "__MSG_descricao__",
   "author": "Dreds",
@@ -100,20 +100,6 @@
     "https://web.kick.com/*"
   ],
   "background": {
-    "service_worker": "src/fundo.js",
-    "scripts": [
-      "src/fundo.js"
-    ]
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "plateia@dredsgg",
-      "strict_min_version": "140.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
-    }
+    "service_worker": "src/fundo.js"
   }
 }

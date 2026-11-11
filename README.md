@@ -14,7 +14,7 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Tests](https://img.shields.io/badge/tests-303%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**Works on:** Chrome · Edge · Brave · Opera GX · Firefox 140+ &nbsp;·&nbsp; **Languages:** Português · English · Español
+**Works on:** Chrome · Edge · Brave · Opera GX &nbsp;·&nbsp; **Languages:** Português · English · Español
 
 <img src="docs/plateia-twitch-room.png" width="900" alt="Plateia Twitch room: header with live counters (live, in chat, earning 2/2, next swap, points and chests gained, PokeIdle bonus) and a How to use button; on the left the Channels, PokeIdle and Settings tabs, a PokeIdle summary and the channel list split into Earning now, Live waiting and Offline, each channel with status, tags and Fixed / Rotation / Chat only modes; on the right the two lives that are earning points">
 
@@ -115,13 +115,12 @@ Before writing the room I measured how Twitch actually behaves, on a live accoun
 
 ```
 extension/
-├── manifest.json            MV3 for every browser: background as service_worker (Chromium) and scripts (Firefox),
-│                            browser_specific_settings.gecko (id plateia@dredsgg, Firefox 140+, no data collection)
+├── manifest.json            MV3 for Chrome, Edge, Brave and Opera GX: background as service_worker, permissions storage and alarms
 ├── COMO-INSTALAR.html       install / use / update guide (PT, EN and ES) with a browser picker, opens on first install
 ├── src/fundo.js             background: update check against this repo's releases (plus that release's changelog),
 │                            reload when the folder changes,
-│                            site-permission check (Firefox lets users turn it off)
-├── src/comum.js             shared: browser/chrome API, language (detect, switch, translate), settings, storage, cookie login,
+│                            site-permission check (users can limit the extension's site access)
+├── src/comum.js             shared: chrome API, language (detect, switch, translate), settings, storage, cookie login,
 │                            page-like fetch, GQL helper
 ├── src/i18n/                English and Spanish texts (en.js, es.js), keyed by the Portuguese text
 ├── _locales/                extension description in each language
@@ -144,7 +143,7 @@ extension/
 ```
 
 - No popup: everything lives inside the site. The only background piece is the small update script.
-- One code base for Chromium and Firefox: `browser` when it exists, `chrome` otherwise; network calls go out like the page itself (`content.fetch` on Firefox), and SVG icons are built without `innerHTML`.
+- One code base for Chrome, Edge, Brave and Opera GX (Manifest V3, `chrome.*`); network calls go out like the page itself, and SVG icons are built without `innerHTML`.
 - Channel data comes from Twitch's own GraphQL endpoint with aliased queries, batched 10 per request (Twitch rejects more than 15 aliases).
 - The room's players are forced to 160p only while they load, then your usual quality setting is restored.
 - Chat presence heals itself: a JOIN that Twitch drops is retried after 30 s, every channel is re-checked each minute, and a silent chat connection is reopened after 6 minutes.
@@ -156,15 +155,13 @@ extension/
 
 While Twitch or Kick is open, Plateia checks this repo's latest release by itself: when the browser starts, when a page opens, every 30 minutes, and whenever you come back to the tab (at most once every 10 minutes). **↻ Check for updates** in either room is only a backup. A new version shows the **New version** box on the Twitch or Kick page (see above), a gold card in the room footer and a gold dot on the Plateia button. **Update** downloads the zip, and once you extract it **over the same folder** Plateia notices the new `manifest.json` within a minute and reloads itself (only the room tabs reload; your other Twitch and Kick tabs keep running). **Later** in the room card (or the X on the box) snoozes it for 1 hour. The **i** button opens the install and update guide.
 
-On Firefox, a signed `.xpi` updates itself through `firefox/updates.json` (the manifest's `update_url`). The temporary install (see below) has to be loaded again with the new zip.
-
 ## Reporting a bug
 
 **Report bug**, in the footer of both rooms next to the update check, opens a prefilled issue in this repo with the version and a short diagnostic: browser, room, counts and on/off states only (no account name, token or channel names). You can read exactly what goes along before sending, or use **Copy report** instead.
 
 ## Install
 
-One package for every browser. Get it from the [latest release](https://github.com/DredsGG/plateia/releases/latest).
+One package for the four browsers. Get it from the [latest release](https://github.com/DredsGG/plateia/releases/latest).
 
 ### Chrome, Edge, Brave, Opera GX
 
@@ -176,18 +173,7 @@ One package for every browser. Get it from the [latest release](https://github.c
 
 On **Opera GX**, if Plateia disappears after you close the browser (a known Opera issue with unpacked extensions), just load the folder again.
 
-### Firefox (140 or newer)
-
-Regular Firefox only keeps extensions that Mozilla has signed. That signing is paperwork Plateia hasn't been through yet, so **for now it installs as a temporary add-on**: it works the same, but Firefox removes it when it closes.
-
-1. Download **plateia-vX.Y.Z.zip** and extract it to a folder.
-2. Open `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…** and pick `manifest.json` inside the folder.
-4. Next time you open Firefox, repeat steps 2 and 3.
-
-When a release has a signed **plateia-vX.Y.Z.xpi**, click it and confirm **Add** (or use `about:addons` → gear → **Install Add-on From File**): it stays installed and updates itself. On Firefox Developer Edition, Nightly or ESR you can already keep it: set `xpinstall.signatures.required` to `false` in `about:config`, rename the zip to `.xpi` and install it from `about:addons`.
-
-If the Plateia button doesn't show up, open `about:addons` → Plateia → **Permissions** and allow twitch.tv and kick.com (the install guide also shows an *Allow access* button when this is missing).
+If the Plateia button doesn't show up, check the extension's site access in the browser's extensions settings: it has to allow twitch.tv and kick.com (the install guide also shows an *Allow access* button when this is missing).
 
 ### After installing
 
@@ -209,7 +195,6 @@ Reload twitch.tv or kick.com and click the **Plateia** button (bottom left: purp
 - A real Drop claimed at 100% hasn't been seen live yet; the logic is covered by the tests. The Kick bundle redemption was confirmed live on v0.9.1 (1,800 points spent on XP + Capture + Lure).
 - On Chrome, Edge, Brave and Opera GX the self-reload after an update needs **Developer mode** to stay on.
 - PokeIdle features need the game open in a tab (reload it once after installing Plateia). Bundle redemption only runs with Kick linked inside the game.
-- Firefox: until the Mozilla signing is set up, Plateia is a temporary add-on there (removed when Firefox closes). Firefox support passed Mozilla's linter (`web-ext lint`, 0 errors) and shares the tested code, but hasn't been run on a live account yet.
 
 ## Tests
 
@@ -239,8 +224,11 @@ node e2e-apoio.mjs ../extension /tmp/out              # Support dialog in real C
 # automatic redemption in real Chromium with the extension loaded and a FAKE Twitch (all network intercepted, no real point is spent): three purchases in order, hidden 2x2 px lives, wrong reward name stops, no stacking: 13 checks
 PW_DIR=/path/with/node_modules/playwright ./e2e-twitch-resgate.sh ../extension /tmp/out   # the .sh opens Chrome and connects over CDP (on Windows Node can't spawn Playwright's chrome.exe); without CDP the .mjs launches Chromium itself
 
-# Firefox: Mozilla's linter, self-distribution rules (0 errors)
-npx web-ext lint --source-dir ../extension --self-hosted
+# the other E2E scripts import the launcher in pw.mjs (same idea). On Windows: PW_DIR=... ./e2e-cdp.sh <extension or a copy of it> e2e-regra14.mjs /tmp/out pt-BR  (LANG_CHROME=<language> sets the browser language)
+
+# manifest and files check: valid MV3 manifest, service_worker only, no browser_specific_settings, every cited file exists,
+# permissions are only storage and alarms, every __MSG_*__ exists, node --check on every .js
+node checar-manifest.cjs ../extension
 ```
 
 `e2e-atualizacao.mjs` loads the real extension in Chromium against a fake GitHub release: the guide opens on install, the gold card shows the versions and notes, *Update* opens the zip, the dot appears on the button, *Later* hides it, and writing a newer `manifest.json` into the folder makes Plateia reload itself (15 s) with the green "updated" notice.

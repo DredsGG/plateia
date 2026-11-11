@@ -20,17 +20,13 @@
     pkIgnorar: []         // canais do PokeIdle que você tirou da lista na mão
   };
 
-  // Firefox: `browser` (promessas); Chrome, Edge, Brave e Opera: `chrome`. Nos testes (jsdom) só existe `chrome`.
-  const ext = (typeof browser !== 'undefined' && browser && browser.runtime && browser.runtime.id) ? browser
-    : (typeof chrome !== 'undefined' ? chrome : undefined);
+  // Chrome, Edge, Brave e Opera GX: `chrome`. Nos testes (jsdom) também só existe `chrome`.
+  const ext = (typeof chrome !== 'undefined' ? chrome : undefined);
   P.ext = ext;
-  P.ehFirefox = () => { try { return ext.runtime.getURL('').startsWith('moz-extension:'); } catch (e) { return false; } };
   const temChrome = !!(ext && ext.storage && ext.storage.local);
-  // Pedido de rede como se fosse a própria página (origem e cookies do site), como o Chrome faz nos content scripts.
-  // No Firefox isso é o `content.fetch`; o `fetch` comum lá sai com a identidade da extensão.
-  P.fetch = (url, opts) => ((typeof content !== 'undefined' && content && typeof content.fetch === 'function')
-    ? content.fetch(url, opts) : fetch(url, opts));
-  // JSON lido como texto: no Firefox o objeto vem do mundo da página; o texto atravessa sem restrição
+  // Pedido de rede como se fosse a própria página (origem e cookies do site): é o que o `fetch` de um content script faz.
+  P.fetch = (url, opts) => fetch(url, opts);
+  // JSON lido como texto: resposta vazia (204) vira null em vez de erro
   P.lerJson = async (r) => {
     if (typeof r.text !== 'function') return r.json();
     const t = await r.text();

@@ -3,7 +3,7 @@
 // X adia e o aviso volta sozinho, Release "URGENTE" sem X e com a automação pausada até atualizar
 // (a atualização de verdade é gravar a versão nova na pasta: a extensão se recarrega sozinha).
 // node e2e-insistente.mjs <CÓPIA da pasta da extensão> <pasta de prints>
-import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
+import { chromium } from './pw.mjs';
 import fs from 'fs';
 const [EXT, OUT = '/tmp'] = process.argv.slice(2);
 let falhas = 0;
@@ -22,7 +22,8 @@ await ctx.route('**/*', async (route) => {
   if (url.host === 'github.com') return route.fulfill({ contentType: 'application/zip', body: 'PK' });
   return route.abort();
 });
-let sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
+const acharSw = async (ctx) => { for (let i = 0; i < 100; i++) { const w = ctx.serviceWorkers().find((x) => /\/src\/fundo\.js$/.test(x.url())); if (w) return w; await new Promise((r) => setTimeout(r, 100)); } return ctx.waitForEvent('serviceworker'); };
+let sw = await acharSw(ctx);
 const extId = sw.url().split('/')[2];
 { const ex = await ctx.newPage(); await ex.goto('chrome://extensions'); await ex.evaluate(() => new Promise((r) => chrome.developerPrivate.updateProfileConfiguration({ inDeveloperMode: true }, r))); await ex.close(); }
 await espera(1200);

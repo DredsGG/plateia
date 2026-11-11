@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.5': [
+      "Removed Firefox support; nothing changes on Chrome, Edge, Brave and Opera GX.",
+      "Chest, Drops, the Twitch and Kick rooms, PokeIdle bonus redemption and updates stay the same."
+    ],
     '0.9.4': [
       "Twitch: Plateia now buys the PokeIdle bonus by itself with channel points. For each bonus, the 10 h reward, in this order: XP, Capture Boost and Secret Lure.",
       "It only buys if the channel balance covers it, if the Twitch account linked in the game is the one open here, and if the bonus is about to run out (less than 1 h left). No pointless stacking of hours.",

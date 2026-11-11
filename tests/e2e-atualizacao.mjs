@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium } from './pw.mjs';
 import fs from 'fs';
 const EXT = process.argv[2];
 const ctx = await chromium.launchPersistentContext('/tmp/pw-perfil-upd-' + Date.now(), {
@@ -16,8 +16,8 @@ await ctx.route('**/*', async (route) => {
   if (url.startsWith('https://github.com/')) return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>zip</title>download do zip' });
   return route.abort();
 });
-let sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
-await sw.evaluate(() => (typeof browser !== 'undefined' ? browser : chrome).storage.local.set({ quadros: { tutorial: true, novidades: chrome.runtime.getManifest().version } })); // tutorial já visto (os quadros cobririam a sala)
+const acharSw = async (ctx) => { for (let i = 0; i < 100; i++) { const w = ctx.serviceWorkers().find((x) => /\/src\/fundo\.js$/.test(x.url())); if (w) return w; await new Promise((r) => setTimeout(r, 100)); } return ctx.waitForEvent('serviceworker'); };
+let sw = await acharSw(ctx);
 { const ex = await ctx.newPage(); await ex.goto('chrome://extensions'); await ex.evaluate(() => new Promise((ok) => chrome.developerPrivate.updateProfileConfiguration({ inDeveloperMode: true }, ok))); await ex.close(); }
 const extId = sw.url().split('/')[2];
 await new Promise((r) => setTimeout(r, 1500));
@@ -35,6 +35,8 @@ const stub = async () => sw.evaluate((NOVA) => {
   }), { headers: { 'content-type': 'application/json' } })) : real(u, o);
 }, NOVA);
 await stub();
+// tutorial e novidades já vistos: o quadro de primeiro uso (v0.7.0) cobre a sala e intercepta o clique
+await sw.evaluate((v) => chrome.storage.local.set({ quadros: { tutorial: true, novidades: v } }), ATUAL);
 const p = await ctx.newPage();
 await p.goto('https://www.twitch.tv/gaules');
 await p.waitForTimeout(1200);
@@ -42,9 +44,10 @@ await p.waitForTimeout(1200);
 await p.goto('https://www.twitch.tv/drops/inventory#plateia');
 await p.waitForTimeout(2000);
 const raiz = p.locator('#plateia-sala');
-await raiz.locator('.upd-proc:not(.upd-bugbt)').click();
+await raiz.locator('.upd-proc[title*="Procurar"]').click();
 await p.waitForTimeout(1200);
 const card = raiz.locator('.upd-card');
+if (!(await card.count())) console.log('DBG', JSON.stringify(await sw.evaluate(async () => (await chrome.storage.local.get('atualizacao')).atualizacao)));
 ok(await card.count() === 1, 'aviso dourado aparece');
 const txt = await card.textContent();
 ok(txt.includes('v' + ATUAL + ' → v' + NOVA), 'mostra versões: ' + txt.slice(0, 60));
@@ -65,7 +68,7 @@ await p2.goto('https://www.twitch.tv/gaules');
 await p2.waitForTimeout(1500);
 const temBolinha = await p2.evaluate(() => { const hs = [...document.querySelectorAll('*')].filter((e) => e.shadowRoot); for (const h of hs) { const b = h.shadowRoot.querySelector('button.nova'); if (b) return b.title; } return null; });
 ok(!!temBolinha, 'bolinha no botão Plateia: ' + temBolinha);
-await p2.screenshot({ path: 'upd-botao.png', clip: { x: 0, y: 760, width: 260, height: 100 } });
+await p2.screenshot({ path: 'upd-botao.png', clip: { x: 0, y: 760, width: 260, height: 100 } }).catch(() => {}); // só evidência: a janela do CDP pode ser menor que 860 px
 // Depois → some
 await raiz.locator('.upd-bt.sec').click();
 await p.waitForTimeout(500);

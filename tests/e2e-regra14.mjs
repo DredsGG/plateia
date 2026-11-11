@@ -2,7 +2,7 @@
 // instalação nova, Release mais novo simulado e atualização simulada, na página do site (sem abrir a sala),
 // em cada idioma do navegador (--lang), e troca de idioma pelo seletor da sala.
 // node e2e-regra14.mjs <pasta da extensão> <pasta de prints> <lang do navegador: pt-BR | en-US | es | fr>
-import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
+import { chromium } from './pw.mjs';
 const [EXT, OUT, LANG = 'pt-BR'] = process.argv.slice(2);
 const ESPERADO = LANG.startsWith('pt') ? 'pt' : LANG.startsWith('es') ? 'es' : 'en';
 const T = {
@@ -20,7 +20,8 @@ const ctx = await chromium.launchPersistentContext('/tmp/claude-0/pw-r14-' + LAN
   channel: 'chromium', headless: true, viewport: { width: 1440, height: 860 }, locale: LANG,
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, `--lang=${LANG}`, '--no-proxy-server'],
 });
-const sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
+const acharSw = async (ctx) => { for (let i = 0; i < 100; i++) { const w = ctx.serviceWorkers().find((x) => /\/src\/fundo\.js$/.test(x.url())); if (w) return w; await new Promise((r) => setTimeout(r, 100)); } return ctx.waitForEvent('serviceworker'); };
+const sw = await acharSw(ctx);
 const V = await sw.evaluate(() => chrome.runtime.getManifest().version);
 const palco = (cor) => `<!doctype html><title>site</title><body style="margin:0;height:100vh;background:${cor};font:16px Arial;color:#fff"><div data-a-target="side-nav-bar"></div><h1 style="margin:40px">página do site</h1><button id="btsite" style="position:fixed;left:50%;top:80%">botão do site</button></body>`;
 await ctx.route('**/*', async (route) => {

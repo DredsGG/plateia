@@ -23,7 +23,7 @@
   const mmss = (ms) => { ms = Math.max(0, ms); const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const hhmm = (ts) => new Date(ts).toLocaleTimeString(P.local(), { hour: '2-digit', minute: '2-digit' });
   const duracao = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `${m} min`; };
-  // desenha SVG a partir de texto fixo sem innerHTML (o validador do Firefox reclama de innerHTML)
+  // desenha SVG a partir de texto fixo sem innerHTML
   const svgDe = (alvo, conteudo) => {
     const doc = new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg">' + conteudo + '</svg>', 'image/svg+xml');
     for (const n of [...doc.documentElement.childNodes]) alvo.appendChild(document.importNode(n, true));
@@ -384,10 +384,7 @@
           h('span', { class: 'qd-esp' }),
           h('button', { class: 'qd-bt qd-ok qd-atualizar', onclick: async () => {
             const r = await enviar({ cmd: 'aplicarAtualizacao' });
-            const txt = r && r.modo === 'download' ? (P.ehFirefox && P.ehFirefox()
-              ? tr('Zip baixado. No Firefox (instalação temporária): extraia e carregue de novo em about:debugging → Carregar extensão temporária.')
-              : tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.'))
-              : r && r.modo === 'xpi' ? tr('Abri o .xpi numa aba: confirme a instalação no Firefox.')
+            const txt = r && r.modo === 'download' ? tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.')
               : r && r.modo === 'loja' ? (r.status === 'aplicando' ? tr('Atualizando…') : tr('O navegador ainda não liberou a versão nova. Tente de novo mais tarde.'))
               : tr('Não deu para atualizar agora. Use "Como atualizar".');
             dica.textContent = txt; dica.style.display = '';
@@ -672,9 +669,7 @@
         temNova ? h('div', { class: 'upd-card' },
           h('b', {}, tr('Atualização disponível')), h('span', { class: 'upd-ver' }, ` · v${v} → v${st.ultima}`),
           ...(notasEmItens(st.notas).length ? [h('ul', {}, ...notasEmItens(st.notas).map((n) => h('li', {}, n)))] : []),
-          baixou ? h('p', { class: 'upd-dica' }, P.ehFirefox && P.ehFirefox()
-            ? tr('Zip baixado. No Firefox (instalação temporária): extraia e carregue de novo em about:debugging → Carregar extensão temporária.') + ' '
-            : tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.') + ' ',
+          baixou ? h('p', { class: 'upd-dica' }, tr('Zip baixado. Extraia por cima da pasta da Plateia (substituindo os arquivos): ela se recarrega sozinha em até 1 minuto.') + ' ',
             h('a', { href: '#', class: 'upd-link', onclick: (e) => { e.preventDefault(); enviar({ cmd: 'abrirGuia', ancora: '#atualizar' }); } }, tr('Como fazer'))) : null,
           h('div', { class: 'upd-bts' },
             h('button', { class: 'upd-bt', onclick: async () => { const r = await enviar({ cmd: 'aplicarAtualizacao' }); baixou = !!(r && r.modo === 'download'); desenhar(); } }, tr('Atualizar')),

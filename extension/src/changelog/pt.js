@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.5': [
+      "Removido o suporte ao Firefox; nada muda no Chrome, Edge, Brave e Opera GX.",
+      "Baú, Drops, salas da Twitch e da Kick, resgate do bônus do PokeIdle e atualização seguem iguais."
+    ],
     '0.9.4': [
       "Twitch: a Plateia agora compra sozinha o bônus do PokeIdle com os pontos do canal. Para cada bônus, a recompensa de 10 h, nesta ordem: XP, Capture Boost e Secret Lure.",
       "Só compra se o saldo do canal cobre, se a Twitch vinculada no jogo é a mesma da conta aberta e se o bônus está para acabar (menos de 1 h). Nada de empilhar horas à toa.",
