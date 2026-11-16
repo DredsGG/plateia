@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.7': [
+      "The PokeIdle tab reloads by itself when Plateia updates: the game sends its data again and the Twitch bonus redemption keeps going without you pressing F5.",
+      "Nothing changes in chests, Drops and the rooms."
+    ],
     '0.9.6': [
       "Fixed: the automatic PokeIdle bonus redeem on Twitch stopped with \"the points panel did not open\". Twitch now opens the panel on a welcome screen the first time; Plateia now goes past it by itself.",
       "Recent redeems now show the reason for each failure in the list."

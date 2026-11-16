@@ -14,6 +14,8 @@ await ctx.route('**/*', async (route) => {
   if (url.startsWith('https://gql.twitch.tv/')) return route.fulfill({ headers: { 'access-control-allow-origin': 'https://www.twitch.tv', 'access-control-allow-headers': '*', 'access-control-allow-credentials': 'true' }, json: { data: {} } });
   if (url.startsWith('https://www.twitch.tv/')) return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Twitch</title><body style="margin:0;background:#0e0e10;color:#eee;font:20px sans-serif"><main style="padding:40px">página da Twitch</main></body>' });
   if (url.startsWith('https://github.com/')) return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>zip</title>download do zip' });
+  // v0.9.7: pokeidle.io falso que manda o bloco da Twitch a cada 1 s (como o jogo pelo WebSocket, via pokeidle-ponte)
+  if (url.startsWith('https://pokeidle.io/')) return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>PokeIdle</title><body>jogo<script>setInterval(() => window.postMessage({ plateia: "pokeidle-twitch", tw: { vinculado: true, login: "odreds", pct: 15, oficiais: [] } }, location.origin), 1000);</script></body>' });
   return route.abort();
 });
 const acharSw = async (ctx) => { for (let i = 0; i < 100; i++) { const w = ctx.serviceWorkers().find((x) => /\/src\/fundo\.js$/.test(x.url())); if (w) return w; await new Promise((r) => setTimeout(r, 100)); } return ctx.waitForEvent('serviceworker'); };
@@ -57,6 +59,7 @@ await raiz.locator('aside').screenshot({ path: 'upd-sala-aviso.png' });
 const nova = ctx.waitForEvent('page');
 await raiz.locator('.upd-bt:not(.sec)').click();
 const aba = await nova;
+await aba.waitForURL(/\.zip$/, { timeout: 8000 }).catch(() => {}); // o evento 'page' chega antes de a aba navegar (url vazia)
 ok(aba.url().endsWith('plateia-v' + NOVA + '.zip'), 'Atualizar baixa o zip: ' + aba.url());
 await p.bringToFront();
 await p.waitForTimeout(600);
@@ -73,8 +76,15 @@ await p2.screenshot({ path: 'upd-botao.png', clip: { x: 0, y: 760, width: 260, h
 await raiz.locator('.upd-bt.sec').click();
 await p.waitForTimeout(500);
 ok((await raiz.locator('.upd-card').count()) === 0, 'Depois esconde o aviso');
+// aba do jogo aberta antes da atualização, marcada para saber se recarregou
+const jogo = await ctx.newPage();
+await jogo.goto('https://pokeidle.io/app');
+await jogo.waitForTimeout(2500);
+await jogo.evaluate(() => { window.__antesDaAtualizacao = true; });
+const pkEm = async () => { try { return ((await sw.evaluate(async () => (await chrome.storage.local.get('pokeidle')).pokeidle)) || {}).em || 0; } catch (e) { return 0; } };
+ok((await pkEm()) > Date.now() - 5000, 'antes de atualizar: o jogo aberto manda dados (pokeidle.em recente)');
 // pasta: grava manifest novo → recarrega sozinha
-const mf = JSON.parse(fs.readFileSync(EXT + '/manifest.json', 'utf8')); mf.version = NOVA;
+const mf =JSON.parse(fs.readFileSync(EXT + '/manifest.json', 'utf8')); mf.version = NOVA;
 fs.writeFileSync(EXT + '/manifest.json', JSON.stringify(mf, null, 2));
 await sw.evaluate(() => vigiarDisco());
 const t0 = Date.now();
@@ -91,4 +101,11 @@ const salaPg = ctx.pages().find((x) => x.url().includes('/drops/inventory'));
 const ok2 = salaPg && await salaPg.evaluate(() => { const h = document.getElementById('plateia-sala'); const e = h && h.shadowRoot.querySelector('.upd-ok'); return e ? e.textContent : null; });
 ok(!!ok2, 'sala reabriu com aviso verde: ' + ok2);
 if (salaPg) await salaPg.locator('#plateia-sala aside').screenshot({ path: 'upd-atualizada.png' });
+// v0.9.7: a aba do jogo recarregou sozinha e voltou a mandar dados (sem F5 de quem usa)
+let recarregou = null; for (let i = 0; i < 10 && recarregou === null; i++) { try { recarregou = await jogo.evaluate(() => !window.__antesDaAtualizacao); } catch (e) { await new Promise((r) => setTimeout(r, 500)); } }
+ok(recarregou === true, 'depois de atualizar: a aba do PokeIdle recarregou sozinha');
+// o guarda grava na hora quando o dado muda e, igual, 1x por minuto: vale qualquer gravação depois da versão nova na pasta (t0)
+await new Promise((r) => setTimeout(r, 2000));
+const em2 = await pkEm();
+ok(em2 > t0, 'depois de atualizar: o jogo voltou a mandar dados à Plateia (pokeidle.em ' + Math.round((em2 - t0) / 1000) + ' s depois da versão nova na pasta)');
 await ctx.close();

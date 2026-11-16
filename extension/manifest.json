@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Plateia",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "default_locale": "en",
   "description": "__MSG_descricao__",
   "author": "Dreds",
@@ -97,7 +97,8 @@
     "https://kick.com/*",
     "https://api.github.com/*",
     "https://gql.twitch.tv/*",
-    "https://web.kick.com/*"
+    "https://web.kick.com/*",
+    "https://pokeidle.io/*"
   ],
   "background": {
     "service_worker": "src/fundo.js"

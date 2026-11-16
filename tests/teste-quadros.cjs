@@ -57,11 +57,15 @@ const ok = (n, v) => { res.push(v); console.log((v ? 'OK  ' : 'FALHOU ') + n); }
   const k = montar({ atualizacao: { instalacaoNova: true } }, 'kick');
   await espera(600);
   ok('sala da Kick: tutorial próprio e botão "Como usar"', !!k.quadro() && /Como usar a sala da Kick/.test(k.quadro().textContent) && !!k.sr().querySelector('.qd-ajuda'));
-  // 6) quem pulou versões (viu a 0.9.2, instalou a atual; o quadro mostra no máximo 4 versões): novidades de cada versão do meio (até 4 grupos)
-  const e = montar({ quadros: { tutorial: true, novidades: '0.9.2' } });
+  // 6) quem pulou versões (viu a 4ª versão antes da atual; o quadro mostra no máximo 4 versões): novidades de cada versão
+  //    do meio, sem a já vista. As versões vêm do próprio changelog, para o teste não quebrar a cada versão nova.
+  const cmp = (x, y) => { const p = (v) => v.split('.').map(Number); const [u, w] = [p(x), p(y)]; for (let i = 0; i < 4; i++) if ((u[i] || 0) !== (w[i] || 0)) return (w[i] || 0) - (u[i] || 0); return 0; };
+  const versoes = Object.keys(a.w.PLATEIA.CHANGELOG.pt).sort(cmp); // da mais nova para a mais velha
+  const vista = versoes[4], doMeio = versoes[3];
+  const e = montar({ quadros: { tutorial: true, novidades: vista } });
   await espera(400);
   const grupos = e.quadro() ? [...e.sr().querySelectorAll('.qd-grupo')].map((g) => g.textContent) : [];
-  ok('pulou versões: novidades da atual e das do meio (sem a já vista)', grupos[0] === 'v' + V && grupos.includes('v0.9.3') && !grupos.includes('v0.9.2'), grupos.join(','));
+  ok('pulou versões: novidades da atual e das do meio (sem a já vista, v' + vista + ')', versoes[0] === V && grupos[0] === 'v' + V && grupos.includes('v' + doMeio) && !grupos.includes('v' + vista), grupos.join(','));
   ok('changelog em pt, en e es para a versão atual', !!(a.w.PLATEIA.CHANGELOG.pt[V] && a.w.PLATEIA.CHANGELOG.en[V] && a.w.PLATEIA.CHANGELOG.es[V]));
   console.log(res.every(Boolean) ? 'TUDO PASSOU' : 'FALHOU');
   process.exit(res.every(Boolean) ? 0 : 1);

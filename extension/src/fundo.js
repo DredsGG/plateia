@@ -144,15 +144,25 @@ ext.runtime.onMessage.addListener((msg, _sender, responder) => {
 });
 // abrir o navegador conta como "próxima abertura": o aviso adiado no X volta (regra 14)
 ext.runtime.onStartup.addListener(async () => { agendar(); await salvar({ adiadoAte: 0 }); procurar(); conferirPermissoes(true); });
+// Abas do PokeIdle já abertas: quando a extensão é instalada ou recarregada (versão nova, ↻), o navegador não põe os
+// scripts novos nelas e os velhos ficam desligados; o jogo para de mandar dados e, em 30 min, o resgate da Twitch para
+// com "dados do jogo antigos" (visto em 2026-11-16). Recarregar a aba do jogo resolve, sem F5 de quem usa.
+async function recarregarPokeidle() {
+  try { for (const t of await ext.tabs.query({ url: ['https://pokeidle.io/*'] })) ext.tabs.reload(t.id); } catch (e) { /* sem acesso ao site */ }
+}
 ext.runtime.onInstalled.addListener(async (d) => {
   agendar();
-  if (d.reason === 'install') { await salvar({ instalacaoNova: true }); const ok = await conferirPermissoes(false); ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html' + (ok ? '#usar' : '#permissoes')) }); }
+  if (d.reason === 'install') {
+    await salvar({ instalacaoNova: true }); const ok = await conferirPermissoes(false); ext.tabs.create({ url: ext.runtime.getURL('COMO-INSTALAR.html' + (ok ? '#usar' : '#permissoes')) });
+    await recarregarPokeidle();
+  }
   if (d.reason === 'update') {
     await salvar({ acabouDeAtualizar: { de: d.previousVersion || null, para: atual(), em: Date.now() }, disponivel: false, urgente: false, adiadoAte: 0, atual: atual() });
     // as salas abertas ainda rodam a versão antiga: recarregar põe a nova (reabrem sozinhas).
     // As outras abas da Twitch/Kick ficam como estão (o baú continua sendo pego); pegam a nova ao recarregar.
     const abas = await ext.tabs.query({ url: ['https://www.twitch.tv/drops/inventory*', 'https://kick.com/drops/claimed*'] });
     for (const t of abas) ext.tabs.reload(t.id);
+    await recarregarPokeidle();
   }
   procurar();
 });

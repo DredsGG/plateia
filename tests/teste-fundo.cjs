@@ -8,14 +8,20 @@ let falhas = 0;
 const ok = (n, c, extra) => { console.log((c ? 'OK     ' : 'FALHOU ') + n + (!c && extra ? '\n       ' + extra : '')); if (!c) falhas++; };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// abas abertas no navegador falso; tabs.query filtra pelos padrões de URL como o Chrome ("*" = qualquer coisa)
+const ABAS = [
+  { id: 1, url: 'https://www.twitch.tv/drops/inventory#plateia' }, { id: 2, url: 'https://kick.com/drops/claimed#plateia' },
+  { id: 3, url: 'https://pokeidle.io/app' }, { id: 4, url: 'https://www.twitch.tv/rodil' }, { id: 5, url: 'https://pokeidle.io/' }
+];
+const casa = (url, padrao) => new RegExp('^' + padrao.split('*').map((s) => s.replace(/[.?+^${}()|[\]\\/]/g, '\\$&')).join('.*') + '$').test(url);
 function montar(release) {
-  const store = {}, ouv = { msg: [], alarm: [], startup: [], installed: [] }, alarmes = {}, pedidos = [];
+  const store = {}, ouv = { msg: [], alarm: [], startup: [], installed: [] }, alarmes = {}, pedidos = [], recarregadas = [];
   const ev = (k) => ({ addListener: (f) => ouv[k].push(f) });
   const chrome = {
     runtime: { getManifest: () => manifest, getURL: (p) => 'chrome-extension://x/' + (p || ''), onMessage: ev('msg'), onStartup: ev('startup'), onInstalled: ev('installed'), reload() {}, requestUpdateCheck: async () => ({ status: 'no_update' }) },
     storage: { local: { get: async (k) => ({ [k]: store[k] && JSON.parse(JSON.stringify(store[k])) }), set: async (o) => Object.assign(store, JSON.parse(JSON.stringify(o))) } },
     alarms: { create: (n, o) => { alarmes[n] = o; }, onAlarm: ev('alarm') },
-    tabs: { create: async () => ({}), query: async () => [], reload() {} },
+    tabs: { create: async () => ({}), query: async (q) => ABAS.filter((t) => [].concat((q && q.url) || []).some((p) => casa(t.url, p))), reload: (id) => { recarregadas.push(id); } },
     management: { getSelf: async () => ({ installType: 'development' }) },
     permissions: { contains: async () => true },
   };
@@ -29,7 +35,7 @@ function montar(release) {
   const ctx = vm.createContext({ chrome, fetch, console, setTimeout, clearTimeout, Date, Promise, encodeURIComponent, String, Number, JSON, Object, Array, RegExp });
   vm.runInContext(fs.readFileSync(path.join(raiz, 'src/fundo.js'), 'utf8'), ctx);
   const mensagem = (msg) => new Promise((r) => { for (const f of ouv.msg) f(msg, {}, r); });
-  return { store, ouv, alarmes, pedidos, mensagem, ctx };
+  return { store, ouv, alarmes, pedidos, mensagem, ctx, recarregadas };
 }
 
 (async () => {
@@ -37,6 +43,12 @@ function montar(release) {
   const f = montar(() => rel);
   for (const g of f.ouv.installed) await g({ reason: 'update', previousVersion: '0.8.0' });
   await espera(50);
+  const rec = [...new Set(f.recarregadas)].sort().join();
+  ok('depois de atualizar: recarrega as salas E as abas do PokeIdle (o jogo volta a mandar dados sem F5); live comum fica', rec === '1,2,3,5', rec);
+  const g0 = montar(() => rel);
+  for (const g of g0.ouv.installed) await g({ reason: 'install' });
+  await espera(50);
+  ok('instalação nova: recarrega as abas do PokeIdle já abertas (o guarda do jogo começa sem F5)', [...new Set(g0.recarregadas)].sort().join() === '3,5', g0.recarregadas.join());
   ok('alarme de procura a cada 30 min', f.alarmes['plateia-procura'] && f.alarmes['plateia-procura'].periodInMinutes === 30);
   const st = f.store.atualizacao || {};
   ok('achou a v9.9.9 e leu o resumo do changelog do Release nos 3 idiomas', st.disponivel === true && st.ultima === '9.9.9' && ['pt', 'en', 'es'].every((l) => st.novidades && st.novidades[l] && st.novidades[l][0] === l + ' item 1'));

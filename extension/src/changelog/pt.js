@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.7': [
+      "A aba do PokeIdle recarrega sozinha quando a Plateia atualiza: o jogo volta a mandar os dados e o resgate do bônus da Twitch segue sem você dar F5.",
+      "Nada muda no baú, nos Drops e nas salas."
+    ],
     '0.9.6': [
       "Corrigido: o resgate automático do bônus do PokeIdle na Twitch parava com \"o painel de pontos não abriu\". A Twitch passou a abrir o painel numa tela de boas-vindas no primeiro uso; a Plateia agora passa por ela sozinha.",
       "Os últimos resgates mostram o motivo de cada falha escrito na lista."

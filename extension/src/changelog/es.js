@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.es = {
+    '0.9.7': [
+      "La pestaña de PokeIdle se recarga sola cuando Plateia se actualiza: el juego vuelve a enviar sus datos y el canje del bono de Twitch sigue sin que pulses F5.",
+      "Nada cambia en los cofres, los Drops y las salas."
+    ],
     '0.9.6': [
       "Corregido: el canje automático del bono de PokeIdle en Twitch se detenía con \"el panel de puntos no se abrió\". Twitch ahora abre el panel en una pantalla de bienvenida la primera vez; Plateia ahora la pasa sola.",
       "Los últimos canjes muestran el motivo de cada fallo escrito en la lista."
