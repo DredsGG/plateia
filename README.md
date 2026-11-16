@@ -11,7 +11,7 @@ A browser extension for **Twitch and Kick**. It grabs the Twitch channel-points 
 ![Twitch](https://img.shields.io/badge/Twitch-twitch.tv-9146FF?logo=twitch&logoColor=white)
 ![Kick](https://img.shields.io/badge/Kick-kick.com-53FC18?logo=kick&logoColor=black)
 ![Version](https://img.shields.io/badge/version-0.9.4-9146FF)
-![Tests](https://img.shields.io/badge/tests-303%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-312%20passing-2e7d32)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Works on:** Chrome · Edge · Brave · Opera GX &nbsp;·&nbsp; **Languages:** Português · English · Español
@@ -48,6 +48,7 @@ The extension knows which site it's on. **Twitch** and **Kick** each get their o
   - one purchase at a time with a random 3–5 s pause, a lock so two calls (or two open rooms) make one purchase, and it pauses on an urgent release;
   - it confirms by the effect (the channel balance dropped by the cost, or the "<login> redeemed ..." line showed up in the chat); any error (button gone, different name or cost, balance didn't drop) **stops everything for 15 minutes** and the PokeIdle tab shows why;
   - an on/off switch in Settings (*Resgate automático do bônus*, on by default) and a Pause button in the PokeIdle tab.
+  - **Twitch's welcome screen** (v0.9.6): the first time a browser profile opens the points panel, Twitch shows a "Power-ups and rewards" welcome screen with a single start button and no rewards (measured on 2026-11-16). Plateia now recognizes it (by its artwork, or by the button text as a fallback) and clicks through it once; it never clicks a follow, subscribe or Bits button. Before v0.9.6 every redemption on a fresh profile stopped with "the points panel did not open". The recent redemptions list now shows the exact reason of each failure.
 
 ### Kick
 
@@ -211,8 +212,8 @@ node teste-fundo.cjs        # background: 30-min check, 10-min floor for page re
 node teste-idiomas.cjs      # every UI string in en/es, browser-language detection, both rooms in pt/en/es, selector: 35/35
 node teste-apoio.cjs        # Support dialog: Pix codes match the reference, CRC, amounts and limits, footer order, never opens by itself, copy with and without clipboard, Esc/X/outside, focus trap, no network, pt/en/es, Kick: 44/44
 node teste-visivel.cjs      # minimized room: Worker timers, page stays visible, sound touch refused -> click -> ok, your volume intact, site sees no events, room hint: 22/22
-node teste-twitch-resgate.cjs # automatic PokeIdle redemption on Twitch against a fake points panel (list, detail, Redeem) inside the room's lives: order XP -> Capture -> Lure, no balance, wrong name or cost, no stacking, error stops 15 min (also after reopening), one purchase for concurrent calls and for two rooms, urgent pause before and mid-cycle, switch off / Pause, same-account lock, official channels only, 10,000 cap, the game's block in the new and old formats, pt/en/es: 67/67
-node rodar-todos.cjs        # runs every teste-*.cjs and adds up the OK / FAILED lines: 303 OK
+node teste-twitch-resgate.cjs # automatic PokeIdle redemption on Twitch against a fake points panel (list, detail, Redeem) inside the room's lives: order XP -> Capture -> Lure, no balance, wrong name or cost, no stacking, error stops 15 min (also after reopening), the first-use welcome screen (clicked through once; a lone "Follow" button is never clicked), one purchase for concurrent calls and for two rooms, urgent pause before and mid-cycle, switch off / Pause, same-account lock, official channels only, 10,000 cap, the game's block in the new and old formats, pt/en/es: 76/76
+node rodar-todos.cjs        # runs every teste-*.cjs and adds up the OK / FAILED lines: 312 OK
 
 # needs Playwright; pass a COPY of the extension folder (the test rewrites its manifest)
 node e2e-atualizacao.mjs /path/to/copy-of-extension   # update flow: 10/10

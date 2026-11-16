@@ -8,6 +8,7 @@
 // Fluxo medido em 2026-11-09 (faturetosl, iframe de 2x2 px escondido): botão "Saldos de Pontos e Bits" abre o painel
 // (.reward-center__content); cada recompensa é um botão com custo em .reward-icon__cost e nome no alt da imagem;
 // clicar nela abre o DETALHE com o botão "Resgatar <custo>"; o 2º clique compra.
+// v0.9.6 (2026-11-16): no 1º uso do perfil o painel abre numa tela de boas-vindas sem recompensas; ver abrirPainel.
 //
 // Este arquivo também traz as contas puras (restante de cada bônus, próxima compra) que a aba PokeIdle usa.
 (() => {
@@ -61,6 +62,11 @@
   const RE_RESGATAR = /^\s*(resgatar|redeem|canjear|reclamar|racheter|échanger|einlösen|riscatta|odbierz|claim)/i;
   const RE_VOLTAR = /^(voltar|back|volver|retour|zurück)/i;
   const RE_FECHAR = /^(fechar|close|cerrar|fermer|schließen)/i;
+  // botão da tela de boas-vindas da Central de Prêmios: "Comece agora mesmo!" medido em pt-BR (2026-11-16); os outros
+  // idiomas são o texto provável, não medido. Só vale no plano B (sem a arte "ftue"); com a arte, basta ser o botão único.
+  // botão que NUNCA é clicado como "boas-vindas", mesmo com a arte "ftue" (seguir, inscrever, comprar Bits...)
+  const RE_NUNCA = /(seguir|follow|segui|inscrev|assin|subscri|bits|comprar|buy|compra|presente|gift|doar|donate|cheer)/i;
+  const RE_BOAS_VINDAS =/^\s*(comece agora|começar|get started|start now|comienza|comenzar|empezar|empieza|commencer|commencez|los geht|jetzt starten|inizia|zacznij|rozpocznij)/i;
 
   class ErroResgate extends Error { constructor(msg, leve) { super(msg); this.leve = !!leve; } }
 
@@ -159,13 +165,50 @@
       const resumoPts = doc.querySelector('[data-test-selector="community-points-summary"]');
       return resumoPts ? [...resumoPts.querySelectorAll('button')].find((b) => !b.querySelector('.claimable-bonus__icon')) : null;
     };
+    // Tela de boas-vindas da Central de Prêmios (medida em 2026-11-16 no Brave 157, rodil, pt-BR; causa das falhas
+    // "o painel de pontos não abriu" de 11/11 a 16/11): no 1º uso do perfil do navegador o painel abre com
+    // "Power-ups e recompensas", uma imagem .../power-ups-and-rewards_ftue/powerups-and-rewards-ftue.jpg e um botão
+    // "Comece agora mesmo!", SEM nenhuma recompensa. Só o clique nesse botão mostra a lista; a Twitch grava então
+    // powerUpsFtueDismissed e channelPointsOnboardingDismissed no localStorage (vale para todas as lives do perfil).
+    // Gravar essas chaves por fora não adianta: o painel já montado não relê (medido).
+    const temCustos = (p) => !!p.querySelector('.reward-icon__cost');
+    function botaoBoasVindas(p) {
+      if (!p || temCustos(p)) return null;
+      const img = p.querySelector('img[src*="ftue" i]'); // plano A: a arte da tela (caminho igual em todo idioma)
+      const area = (img && img.closest('.scrollable-area')) || p.querySelector('.scrollable-area');
+      if (!area) return null;
+      // o botão da tela é o ÚNICO da área rolável sem aria-label e sem número (recompensa e Resgatar têm custo)
+      const bts = [...area.querySelectorAll('button')].filter((b) => !b.getAttribute('aria-label') && !/\d/.test(b.textContent || '') && !RE_RESGATAR.test(b.textContent || ''));
+      if (bts.length !== 1 || RE_NUNCA.test(bts[0].textContent || '')) return null;
+      if (img) return bts[0];
+      // plano B (a Twitch trocou a arte): só o texto conhecido do botão; outro botão solto (ex.: "Seguir") nunca é clicado
+      return RE_BOAS_VINDAS.test(bts[0].textContent || '') ? bts[0] : null;
+    }
+    // o que o painel mostra, para o registro dizer o motivo exato
+    const resumoPainel = (p) => String((p && (p.querySelector('.scrollable-area') || p).textContent) || '').replace(/\s+/g, ' ').trim().slice(0, 90);
     async function abrirPainel(doc) {
-      if (painelDe(doc)) return;
-      const bt = await esperarAte(() => botaoSaldo(doc), TEMPOS.achar);
-      if (!bt) throw new ErroResgate(tr('o painel de pontos ainda não apareceu na live'), true);
-      bt.click();
-      const p = await esperarAte(() => { const x = painelDe(doc); return x && x.querySelector('.reward-icon__cost') ? x : null; }, TEMPOS.achar);
-      if (!p) throw new ErroResgate(tr('o painel de pontos não abriu'));
+      let p = painelDe(doc);
+      if (!p) {
+        const bt = await esperarAte(() => botaoSaldo(doc), TEMPOS.achar);
+        if (!bt) throw new ErroResgate(tr('o painel de pontos ainda não apareceu na live'), true);
+        bt.click();
+        p = await esperarAte(() => painelDe(doc), TEMPOS.achar);
+        if (!p) throw new ErroResgate(tr('o clique no saldo não abriu o painel de pontos'));
+      }
+      // o painel abriu: espera a lista (com custos) ou a tela de boas-vindas
+      let boas = null;
+      p = await esperarAte(() => { const x = painelDe(doc); if (!x) return null; if (temCustos(x)) return x; boas = botaoBoasVindas(x); return boas ? x : null; }, TEMPOS.achar);
+      if (p && !temCustos(p) && boas) {
+        if (impedimento()) throw new ErroResgate(tr('parado antes de passar a tela de boas-vindas'), true);
+        boas.click(); // passa a tela de boas-vindas (não gasta ponto: a tela não tem recompensa nem Resgatar)
+        p = await esperarAte(() => { const x = painelDe(doc); return x && temCustos(x) ? x : null; }, TEMPOS.achar);
+        if (!p) throw new ErroResgate(tr('o painel ficou na tela de boas-vindas da Twitch ("{t}")', { t: resumoPainel(painelDe(doc)) }));
+      }
+      if (!p) {
+        const x = painelDe(doc);
+        if (!x) throw new ErroResgate(tr('o painel de pontos fechou sozinho antes de mostrar as recompensas'));
+        throw new ErroResgate(tr('o painel de pontos abriu sem nenhuma recompensa ("{t}")', { t: resumoPainel(x) }));
+      }
     }
     async function fecharPainel(doc) {
       try {

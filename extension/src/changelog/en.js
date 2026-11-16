@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.en = {
+    '0.9.6': [
+      "Fixed: the automatic PokeIdle bonus redeem on Twitch stopped with \"the points panel did not open\". Twitch now opens the panel on a welcome screen the first time; Plateia now goes past it by itself.",
+      "Recent redeems now show the reason for each failure in the list."
+    ],
     '0.9.5': [
       "Removed Firefox support; nothing changes on Chrome, Edge, Brave and Opera GX.",
       "Chest, Drops, the Twitch and Kick rooms, PokeIdle bonus redemption and updates stay the same."

@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.pt = {
+    '0.9.6': [
+      "Corrigido: o resgate automático do bônus do PokeIdle na Twitch parava com \"o painel de pontos não abriu\". A Twitch passou a abrir o painel numa tela de boas-vindas no primeiro uso; a Plateia agora passa por ela sozinha.",
+      "Os últimos resgates mostram o motivo de cada falha escrito na lista."
+    ],
     '0.9.5': [
       "Removido o suporte ao Firefox; nada muda no Chrome, Edge, Brave e Opera GX.",
       "Baú, Drops, salas da Twitch e da Kick, resgate do bônus do PokeIdle e atualização seguem iguais."

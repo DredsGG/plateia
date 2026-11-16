@@ -70,6 +70,7 @@
           for (const r of regsTw.slice(0, 6)) {
             tw.push(h('div', { class: 'pk-item' }, h('span', {}, `${hhmm(r.em)} · ${r.canal} · ${R && R.TIPOS.find((x) => x.tipo === r.tipo) ? R.TIPOS.find((x) => x.tipo === r.tipo).rotulo + ' 10h' : r.nome}`),
               r.ok ? h('span', { class: 'tag t2' }, `-${fmt(r.custo)}`) : h('span', { class: 'tag', title: r.erro || '' }, r.incerta ? tr('não confirmado') : tr('falhou'))));
+            if (!r.ok && r.erro) tw.push(h('small', { class: 'st pk-motivo' }, r.erro)); // motivo escrito, não só no título
           }
         }
       }

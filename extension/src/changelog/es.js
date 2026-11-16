@@ -5,6 +5,10 @@
   if (!P) return;
   P.CHANGELOG = P.CHANGELOG || {};
   P.CHANGELOG.es = {
+    '0.9.6': [
+      "Corregido: el canje automático del bono de PokeIdle en Twitch se detenía con \"el panel de puntos no se abrió\". Twitch ahora abre el panel en una pantalla de bienvenida la primera vez; Plateia ahora la pasa sola.",
+      "Los últimos canjes muestran el motivo de cada fallo escrito en la lista."
+    ],
     '0.9.5': [
       "Se eliminó el soporte de Firefox; nada cambia en Chrome, Edge, Brave y Opera GX.",
       "Cofre, Drops, las salas de Twitch y Kick, el canje del bonus de PokeIdle y la actualización siguen igual."

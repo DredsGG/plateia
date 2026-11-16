@@ -57,7 +57,17 @@ async function detalhe(r) {
   p.appendChild(rb);
 }
 async function atualizarSaldo() { const j = await api('saldo'); document.getElementById('pts').textContent = fmt(j.saldo); }
-document.getElementById('pts').onclick = async () => { if (painel) fechar(); else { await api('log', { e: 'abrir ' + canal }); lista(); } };
+// v0.9.6: tela de boas-vindas da Central de Prêmios, igual à medida em 2026-11-16 (Brave, rodil): no 1º uso do perfil
+// o painel abre sem recompensas; "Comece agora mesmo!" grava no localStorage (vale para todas as lives) e mostra a lista
+function boasVindas() {
+  const p = novoPainel(); const h = cab(false); const m = document.createElement('button'); m.setAttribute('aria-label', 'Mais opções'); h.prepend(m); p.appendChild(h);
+  const a = document.createElement('div'); a.className = 'scrollable-area';
+  a.innerHTML = '<img alt="Gráfico de primeiro acesso na Central de Prêmios" src="/power-ups-and-rewards_ftue/powerups-and-rewards-ftue.jpg"><div>Apoie ' + canal + ' com Bits ou Pontos do Canal!</div>';
+  const go = document.createElement('button'); go.textContent = 'Comece agora mesmo!';
+  go.onclick = async () => { localStorage.setItem('powerUpsFtueDismissed', 'true'); localStorage.setItem('channelPointsOnboardingDismissed', 'true'); await api('log', { e: 'boas-vindas ' + canal }); lista(); };
+  a.appendChild(go); p.appendChild(a);
+}
+document.getElementById('pts').onclick = async () => { if (painel) fechar(); else { await api('log', { e: 'abrir ' + canal }); if (localStorage.getItem('powerUpsFtueDismissed') !== 'true') boasVindas(); else lista(); } };
 atualizarSaldo();
 </script>`;
 
@@ -154,6 +164,7 @@ await iniciar();
   ok('comprou na ordem XP -> Capture Boost -> Secret Lure, todos de 10 h, no canal que cobre', nomes === 'Bônus +15% XP PokeIdle (10h)@canala | Bônus de +15% Capture Boost (10h)@canala | Bônus de +15% Secret Lure (10h)@canala', nomes);
   const seq = mundo.log.filter((e) => /^(abrir|detalhe|RESGATAR)/.test(e));
   ok('cada compra = abrir o painel, abrir o detalhe, resgatar (nunca resgata sem abrir o detalhe antes)', seq.length === 9 && seq.every((e, i) => e.startsWith(['abrir', 'detalhe', 'RESGATAR'][i % 3])), seq.join(' | '));
+  ok('v0.9.6: a tela de boas-vindas do 1º uso apareceu e foi passada uma vez só (o localStorage vale para as próximas)', mundo.log.filter((e) => /^boas-vindas/.test(e)).length === 1, mundo.log.join(' | '));
   ok('saldo do canal: 20.000 - 18.000 = 2.000; o do outro canal intacto', mundo.saldos.canala === 2000 && mundo.saldos.canalb === 500, JSON.stringify(mundo.saldos));
   const reg = await sw.evaluate(async () => (await chrome.storage.local.get('twitchResgates')).twitchResgates);
   ok('twitchResgates gravado com as 3 compras confirmadas', Array.isArray(reg) && reg.length === 3 && reg.every((r) => r.ok && r.canal === 'canala' && r.via), JSON.stringify(reg));

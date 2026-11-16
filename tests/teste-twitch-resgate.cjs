@@ -135,7 +135,34 @@ async function montar(o = {}) {
       });
       painel.appendChild(rb);
     }
-    btn.addEventListener('click', () => { if (painel) fechar(); else { mundo.cliques.push('abrir ' + login); lista(); } });
+    // Tela de boas-vindas da Central de Prêmios (medida em 2026-11-16 no Brave, rodil): no 1º uso do perfil o painel abre
+    // com "Power-ups e recompensas", uma imagem .../power-ups-and-rewards_ftue/powerups-and-rewards-ftue.jpg e o botão
+    // "Comece agora mesmo!", sem nenhuma recompensa. O clique grava no localStorage (vale para todas as lives) e mostra a lista.
+    function boasVindas() {
+      montarPainel(); painel.appendChild(cab(false));
+      const mais = d.createElement('button'); mais.setAttribute('aria-label', 'Mais opções'); mais.addEventListener('click', () => mundo.cliques.push('MAIS OPCOES ' + login)); painel.firstChild.prepend(mais);
+      const area = d.createElement('div'); area.className = 'scrollable-area';
+      if (!mundo.ftueSemImagem) { const img = d.createElement('img'); img.alt = 'Gráfico de primeiro acesso na Central de Prêmios'; img.src = 'https://d3aqoihi2n8ty8.cloudfront.net/power-ups-and-rewards_ftue/powerups-and-rewards-ftue.jpg'; area.appendChild(img); }
+      const t = d.createElement('div'); t.textContent = 'Apoie ' + login + ' com Bits ou Pontos do Canal para ter acesso a benefícios divertidos e interativos!'; area.appendChild(t);
+      const go = d.createElement('button'); go.textContent = mundo.ftueBotao || 'Comece agora mesmo!';
+      go.addEventListener('click', () => { mundo.cliques.push('boas-vindas ' + login); if (mundo.ftue === 'preso') return; mundo.ftue = false; lista(); });
+      area.appendChild(go); painel.appendChild(area);
+    }
+    // painel que abre sem recompensas e com um botão que NÃO é a boas-vindas (ex.: "Seguir"): não pode ser clicado
+    function semRecompensas() {
+      montarPainel(); painel.appendChild(cab(false));
+      const area = d.createElement('div'); area.className = 'scrollable-area';
+      const t = d.createElement('div'); t.textContent = 'Siga o canal para resgatar recompensas'; area.appendChild(t);
+      const s = d.createElement('button'); s.textContent = 'Seguir'; s.addEventListener('click', () => mundo.cliques.push('SEGUIR ' + login)); area.appendChild(s);
+      painel.appendChild(area);
+    }
+    btn.addEventListener('click', () => {
+      if (painel) { fechar(); return; }
+      mundo.cliques.push('abrir ' + login);
+      if (mundo.cliqueNaoAbre) return;
+      if (mundo.ftue) boasVindas(); else if (mundo.painelSemRecompensas) semRecompensas(); else lista();
+    });
+    if (mundo.ftue && mundo.jaAbertoNaBoasVindas) boasVindas(); // quem usa abriu o painel antes e ele ficou na boas-vindas
     fr.dataset.fake = '1';
   }
   const timer = w.setInterval(() => { const s = sr(); if (s) for (const fr of s.querySelectorAll('iframe')) instalar(fr); }, 15);
@@ -491,6 +518,45 @@ const hora = (h) => Date.now() + h * 3600e3;
     pw.postMessage({ plateia: 'pokeidle-twitch', tw: { vinculado: true, login: 'odreds', oficiais: [{ login: 'canalx', bonus: true, ativo: false }, { login: 'canaly', bonus: false, ativo: true }] } }, '*');
     await espera(60);
     ok('guarda: com `ativo` e `bonus` juntos, vale o `ativo`', store.pokeidle && store.pokeidle.oficiais[0].bonus === false && store.pokeidle.oficiais[1].bonus === true, JSON.stringify(store.pokeidle && store.pokeidle.oficiais));
+  }
+
+  // ---------- 15) v0.9.6: tela de boas-vindas da Central de Prêmios (falha real de 11/11 a 16/11 no Brave) ----------
+  {
+    const sem = (m, re) => !m.cliques.some((c) => re.test(c));
+    const a = await montar({ mundo: { ftue: true } });
+    await a.ocioso(900);
+    ok('boas-vindas no 1º uso: passa pela tela ("Comece agora mesmo!") uma vez e compra XP -> Capture -> Lure', ordem(a.mundo).join() === [XP, CAP, LURE].map((n) => n + '@canala').join() && a.mundo.cliques.filter((c) => /^boas-vindas/.test(c)).length === 1 && sem(a.mundo, /MAIS OPCOES/), a.mundo.cliques.join(' | '));
+    ok('...sem erro nem bloqueio, e o histórico fica "ok"', (a.store.twitchResgates || []).length === 3 && a.store.twitchResgates.every((r) => r.ok) && !a.resgate().estado().erro, JSON.stringify(a.store.twitchResgates));
+    a.fim();
+    const b = await montar({ mundo: { ftue: true, ftueSemImagem: true } });
+    await b.ocioso(900);
+    ok('plano B: boas-vindas sem a imagem "ftue" (Twitch trocou a arte) ainda é reconhecida pelo botão único da área', ordem(b.mundo).length === 3 && b.mundo.cliques.filter((c) => /^boas-vindas/.test(c)).length === 1, b.mundo.cliques.join(' | '));
+    b.fim();
+    const c = await montar({ mundo: { ftue: 'preso' } });
+    await c.ocioso(700);
+    const ec = (c.store.twitchResgates || [])[0] || {};
+    ok('boas-vindas que não sai: não compra, motivo exato no registro e bloqueio de 15 min', c.mundo.compras.length === 0 && /tela de boas-vindas/.test(ec.erro || '') && c.resgate().estado().bloqueadoAte > 0, JSON.stringify(ec));
+    const t = c.textoAbaPk();
+    ok('...e "Últimos resgates" mostra o motivo escrito (não só "falhou")', /falhou/.test(t) && (t.match(/tela de boas-vindas/g) || []).length >= 2, t);
+    c.fim();
+    const d = await montar({ mundo: { painelSemRecompensas: true } });
+    await d.ocioso(700);
+    const ed = (d.store.twitchResgates || [])[0] || {};
+    ok('painel aberto sem recompensas e com outro botão ("Seguir"): NÃO clica nele e registra o que o painel mostrava', d.mundo.compras.length === 0 && sem(d.mundo, /SEGUIR/) && /sem nenhuma recompensa/.test(ed.erro || '') && /Siga o canal/.test(ed.erro || ''), JSON.stringify(ed) + ' ' + d.mundo.cliques.join('|'));
+    d.fim();
+    const f = await montar({ mundo: { ftue: true, ftueBotao: 'Seguir' } });
+    await f.ocioso(700);
+    ok('arte "ftue" com um botão "Seguir": NÃO clica nele (lista de recusa) e registra o que o painel mostrava', f.mundo.compras.length === 0 && sem(f.mundo, /^boas-vindas/) && /sem nenhuma recompensa/.test(((f.store.twitchResgates || [])[0] || {}).erro || ''), f.mundo.cliques.join('|'));
+    f.fim();
+    const g = await montar({ mundo: { ftue: true, jaAbertoNaBoasVindas: true } });
+    await g.ocioso(900);
+    ok('painel já aberto na tela de boas-vindas: passa por ela e compra os 3', ordem(g.mundo).length === 3 && g.mundo.cliques.filter((c) => /^boas-vindas/.test(c)).length === 1, g.mundo.cliques.join(' | '));
+    g.fim();
+    const e = await montar({ mundo: { cliqueNaoAbre: true } });
+    await e.ocioso(700);
+    const ee = (e.store.twitchResgates || [])[0] || {};
+    ok('clique no saldo que não abre nada: motivo "o clique no saldo não abriu o painel"', e.mundo.compras.length === 0 && /clique no saldo não abriu o painel/.test(ee.erro || ''), JSON.stringify(ee));
+    e.fim();
   }
 
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTUDO PASSOU');
